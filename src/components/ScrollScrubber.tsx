@@ -1,15 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FrameSequenceManager } from '../utils/canvasRenderer';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, ChevronDown } from 'lucide-react';
 
 interface ScrollScrubberProps {
   frameManager: FrameSequenceManager;
   onOpenAcquisition: () => void;
+  onProgressChange?: (progress: number, frameIndex: number) => void;
 }
+
+interface ChapterMark {
+  id: string;
+  label: string;
+  frameStart: number;
+  frameEnd: number;
+  progress: number;
+}
+
+const CHAPTERS: ChapterMark[] = [
+  { id: 'ch1', label: '01 · SILHOUETTE', frameStart: 0, frameEnd: 59, progress: 0.08 },
+  { id: 'ch2', label: '02 · PROFILE 8.2MM', frameStart: 60, frameEnd: 119, progress: 0.33 },
+  { id: 'ch3', label: '03 · GUILLOCHÉ', frameStart: 120, frameEnd: 179, progress: 0.61 },
+  { id: 'ch4', label: '04 · ACQUIRE', frameStart: 180, frameEnd: 239, progress: 0.88 },
+];
 
 export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
   frameManager,
   onOpenAcquisition,
+  onProgressChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,6 +34,7 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
   const [currentProgress, setCurrentProgress] = useState(0);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isScrubbingDirectly, setIsScrubbingDirectly] = useState(false);
 
   // Check prefers-reduced-motion
   useEffect(() => {
@@ -27,6 +45,20 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
     mediaQuery.addEventListener('change', listener);
     return () => mediaQuery.removeEventListener('change', listener);
   }, []);
+
+  // Programmatic smooth scroll to chapter progress
+  const scrollToProgress = (targetProg: number) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const containerTop = window.scrollY + rect.top;
+    const totalScrollable = rect.height - window.innerHeight;
+    const targetScrollY = containerTop + targetProg * totalScrollable;
+
+    window.scrollTo({
+      top: targetScrollY,
+      behavior: 'smooth',
+    });
+  };
 
   // Native Canvas Scroll Engine (requestAnimationFrame)
   useEffect(() => {
@@ -52,7 +84,6 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
       if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
         canvas.width = targetWidth;
         canvas.height = targetHeight;
-        // Invalidate last drawn frame to force redraw
         lastDrawnFrameRef.current = -1;
       }
     };
@@ -108,6 +139,7 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
               lastDrawnFrameRef.current = frameIndex;
               setCurrentFrameIndex(frameIndex);
               setCurrentProgress(smoothedProgress);
+              onProgressChange?.(smoothedProgress, frameIndex);
             }
           }
         }
@@ -126,6 +158,16 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
       canvas.height = 0;
     };
   }, [frameManager, prefersReducedMotion]);
+
+  // Handle direct click/drag on frame scrubber ruler
+  const handleScrubberInteraction = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const ruler = e.currentTarget;
+    const rect = ruler.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+    scrollToProgress(ratio);
+  };
 
   // Reduced motion accessible fallback view
   if (prefersReducedMotion) {
@@ -169,11 +211,9 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
   }
 
   // Chapter Opacity Calculations based on currentProgress (0.0 -> 1.0)
-  // Chapter 1: 0.00 to 0.18
   const ch1Opacity = Math.max(0, Math.min(1, 1 - currentProgress / 0.15));
   const ch1TranslateY = (currentProgress / 0.15) * -30;
 
-  // Chapter 2: 0.22 to 0.44
   let ch2Opacity = 0;
   if (currentProgress >= 0.20 && currentProgress <= 0.46) {
     if (currentProgress < 0.28) {
@@ -185,7 +225,6 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
     }
   }
 
-  // Chapter 3: 0.48 to 0.72
   let ch3Opacity = 0;
   if (currentProgress >= 0.48 && currentProgress <= 0.74) {
     if (currentProgress < 0.55) {
@@ -197,11 +236,19 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
     }
   }
 
-  // Chapter 4: 0.76 to 1.00
   let ch4Opacity = 0;
   if (currentProgress >= 0.76) {
     ch4Opacity = Math.min(1, (currentProgress - 0.76) / 0.12);
   }
+
+  // Determine current active chapter index
+  const activeChapterIndex = currentProgress < 0.2
+    ? 0
+    : currentProgress < 0.46
+    ? 1
+    : currentProgress < 0.75
+    ? 2
+    : 3;
 
   return (
     <div ref={containerRef} className="relative w-full h-[750vh]">
@@ -234,9 +281,21 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
             Calibre 900 · 240 Native Canvas Frames
           </p>
 
-          <div className="absolute bottom-12 flex flex-col items-center gap-2 text-xs font-mono text-[#6d6f6f]">
-            <span className="tracking-widest uppercase">Scroll to scrub assembly</span>
-            <ArrowDown className="w-4 h-4 animate-bounce text-[#d4af37]" />
+          {/* Subtle Pulsating Scroll Guide Indicator */}
+          <div className="absolute bottom-14 flex flex-col items-center gap-3 text-xs font-mono text-[#8d8d89] pointer-events-auto">
+            {/* Minimalist Watch Crown / Scroll Pill with Gliding Amber Bead */}
+            <div className="relative w-6 h-10 rounded-full border border-[#585a5a] flex items-start justify-center pt-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-scroll-glide" />
+              {/* Outer soft halo pulse */}
+              <span className="absolute inset-0 rounded-full border border-[#d4af37]/30 animate-halo-expand pointer-events-none" />
+            </div>
+
+            <div className="flex items-center gap-2 tracking-widest uppercase text-[11px]">
+              <span className="text-[#d8d8d4]">Scroll to scrub 240 frames</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-amber-pulse" />
+            </div>
+
+            <ChevronDown className="w-4 h-4 text-[#d4af37] animate-bounce" />
           </div>
         </div>
 
@@ -293,7 +352,7 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
           </div>
 
           {/* Bottom Acquisition Action */}
-          <div className="w-full max-w-md text-center space-y-4 pb-6 pointer-events-auto">
+          <div className="w-full max-w-md text-center space-y-4 pb-14 pointer-events-auto">
             <div className="space-y-1">
               <div className="text-xs font-mono text-[#d4af37] tracking-widest uppercase">
                 Series 01 · 100 Numbered Pieces
@@ -318,13 +377,121 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
           </div>
         </div>
 
-        {/* Bottom Scroll Telemetry HUD (Micro-Indicator) */}
-        <div className="absolute bottom-6 left-6 md:left-12 flex items-center gap-4 text-[10px] font-mono text-[#585a5a] pointer-events-none select-none">
-          <span>SCRUB FRAME: {currentFrameIndex.toString().padStart(3, '0')} / 239</span>
-          <span>·</span>
-          <span>CHOP: {(currentProgress * 100).toFixed(1)}%</span>
-          <span>·</span>
-          <span>FPS: 60 NATIVE</span>
+        {/* Vertical Chapter Rail & Pulsating Indicators (Right Edge) */}
+        <aside
+          aria-label="Frame sequence progress"
+          className="hidden sm:flex absolute right-6 md:right-10 top-1/2 -translate-y-1/2 flex-col items-end gap-6 z-20 select-none"
+        >
+          {/* Connecting vertical hairline track */}
+          <div className="relative flex flex-col items-end gap-6">
+            <div className="absolute right-[5px] top-1.5 bottom-1.5 w-[1px] bg-[#3c3b3a] -z-10" />
+
+            {CHAPTERS.map((ch, idx) => {
+              const isActive = activeChapterIndex === idx;
+              const isPast = currentProgress >= ch.progress;
+
+              return (
+                <button
+                  key={ch.id}
+                  onClick={() => scrollToProgress(ch.progress)}
+                  className="group flex items-center gap-3 cursor-pointer py-1 text-right focus:outline-none"
+                  title={`Jump to ${ch.label}`}
+                >
+                  {/* Chapter Label (Fades in slightly on hover or active) */}
+                  <span
+                    className={`text-[10px] font-mono tracking-widest transition-all duration-300 ${
+                      isActive
+                        ? 'text-[#d4af37] font-semibold translate-x-0 opacity-100'
+                        : 'text-[#6d6f6f] group-hover:text-[#d8d8d4] opacity-70 group-hover:opacity-100'
+                    }`}
+                  >
+                    {ch.label}
+                  </span>
+
+                  {/* Pulsating Indicator Node */}
+                  <div className="relative flex items-center justify-center w-3 h-3">
+                    {/* Concentric pulsing halo when active */}
+                    {isActive && (
+                      <span className="absolute w-5 h-5 rounded-full border border-[#d4af37]/60 animate-halo-expand pointer-events-none" />
+                    )}
+
+                    {/* Node Core Pip */}
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full border transition-all duration-300 ${
+                        isActive
+                          ? 'bg-[#d4af37] border-[#d4af37] animate-amber-pulse scale-110'
+                          : isPast
+                          ? 'bg-[#585a5a] border-[#585a5a]'
+                          : 'bg-[#171817] border-[#3c3b3a] group-hover:border-[#8d8d89]'
+                      }`}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Micro Frame Telemetry */}
+          <div className="text-[10px] font-mono text-[#6d6f6f] tabular-nums pt-1 border-t border-[#3c3b3a]">
+            FRAME <span className="text-[#d8d8d4] font-medium">{currentFrameIndex.toString().padStart(3, '0')}</span> / 239
+          </div>
+        </aside>
+
+        {/* Bottom Interactive Frame Scrubber Ruler with Pulsating Head */}
+        <div className="absolute bottom-4 left-6 right-6 md:left-12 md:right-12 z-20 flex flex-col md:flex-row md:items-center justify-between gap-3 select-none pointer-events-auto">
+          {/* Telemetry info */}
+          <div className="flex items-center gap-3 text-[10px] font-mono text-[#6d6f6f]">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-amber-pulse" />
+              <span className="text-[#d8d8d4] uppercase tracking-wider">Canvas Scrub</span>
+            </div>
+            <span>·</span>
+            <span>FRAME {currentFrameIndex.toString().padStart(3, '0')} / 239</span>
+            <span className="hidden sm:inline">·</span>
+            <span className="hidden sm:inline">PROGRESS {(currentProgress * 100).toFixed(1)}%</span>
+          </div>
+
+          {/* Horizontal Interactive Timeline Ruler */}
+          <div
+            onClick={handleScrubberInteraction}
+            className="group relative h-6 w-full max-w-sm flex items-center cursor-pointer"
+            title="Click or drag to scrub frames"
+          >
+            {/* Background hairline ruler */}
+            <div className="w-full h-[1px] bg-[#3c3b3a] group-hover:bg-[#585a5a] transition-colors" />
+
+            {/* Chapter milestone ticks */}
+            {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => (
+              <div
+                key={i}
+                className="absolute top-1/2 -translate-y-1/2 w-[1px] h-2 bg-[#585a5a]"
+                style={{ left: `${pct * 100}%` }}
+              />
+            ))}
+
+            {/* Active scrubbed fill bar */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 h-[2px] bg-[#d4af37] transition-all duration-75"
+              style={{ width: `${currentProgress * 100}%` }}
+            />
+
+            {/* Subtle Pulsating Playhead Pip */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -ml-2 flex items-center justify-center transition-all duration-75"
+              style={{ left: `${currentProgress * 100}%` }}
+            >
+              {/* Outer breathing aura */}
+              <span className="absolute w-4 h-4 rounded-full bg-[#d4af37]/20 animate-halo-expand pointer-events-none" />
+              {/* Center amber pip */}
+              <span className="w-2.5 h-2.5 rounded-full bg-[#d4af37] ring-2 ring-[#171817] shadow-none animate-amber-pulse" />
+            </div>
+          </div>
+
+          {/* Micro Scroll Hint when in middle of sequence */}
+          <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-[#8d8d89]">
+            <span className="tracking-wider uppercase">Scrub or Wheel</span>
+            <span className="inline-block w-1 h-1 rounded-full bg-[#d4af37] animate-ping" />
+          </div>
         </div>
       </div>
     </div>

@@ -57,4 +57,55 @@
   .hairline-l {
     border-left: 1px solid #3c3b3a;
   }
+
+  @keyframes amber-pulse {
+    0%, 100% {
+      opacity: 0.35;
+      transform: scale(0.96);
+    }
+    50% {
+      opacity: 0.95;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes scroll-glide {
+    0% {
+      transform: translateY(-8px);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(12px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes halo-expand {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+  }
+
+  .animate-amber-pulse {
+    animation: amber-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-scroll-glide {
+    animation: scroll-glide 1.9s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+
+  .animate-halo-expand {
+    animation: halo-expand 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
 }

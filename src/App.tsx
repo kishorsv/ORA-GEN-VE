@@ -23,6 +23,8 @@ export default function App() {
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isAcquisitionOpen, setIsAcquisitionOpen] = useState(false);
   const [isAudioActive, setIsAudioActive] = useState(false);
+  const [canvasProgress, setCanvasProgress] = useState(0);
+  const [currentFrame, setCurrentFrame] = useState(0);
 
   // Initialize and preload 240 frames
   useEffect(() => {
@@ -68,6 +70,22 @@ export default function App() {
     }
   };
 
+  const handleScrubClick = (targetProg: number) => {
+    // Locate spacer container
+    const spacer = document.querySelector('div[class*="h-[750vh]"]') as HTMLElement;
+    if (spacer) {
+      const rect = spacer.getBoundingClientRect();
+      const containerTop = window.scrollY + rect.top;
+      const totalScrollable = rect.height - window.innerHeight;
+      const targetScrollY = containerTop + targetProg * totalScrollable;
+
+      window.scrollTo({
+        top: targetScrollY,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#171817] text-[#d8d8d4] font-body selection:bg-[#d4af37] selection:text-[#171817]">
       {/* Real-Progress Preloader */}
@@ -79,12 +97,15 @@ export default function App() {
         onEnter={() => setIsReady(true)}
       />
 
-      {/* Top Bar Contract (3 Zones) */}
+      {/* Top Bar Contract (3 Zones) with Slim Horizontal Progress Bar */}
       <Navigation
         onOpenAcquisition={() => setIsAcquisitionOpen(true)}
         onOpenInspector={() => setIsInspectorOpen(true)}
         isAudioActive={isAudioActive}
         onToggleAudio={handleToggleAudio}
+        scrollProgress={canvasProgress}
+        currentFrame={currentFrame}
+        onScrubClick={handleScrubClick}
       />
 
       {/* Main Content Area */}
@@ -93,6 +114,10 @@ export default function App() {
         <ScrollScrubber
           frameManager={frameManager}
           onOpenAcquisition={() => setIsAcquisitionOpen(true)}
+          onProgressChange={(prog, frame) => {
+            setCanvasProgress(prog);
+            setCurrentFrame(frame);
+          }}
         />
 
         {/* Asymmetric Bento Grid & Technical Matrix */}
