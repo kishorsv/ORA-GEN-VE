@@ -111,37 +111,19 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
           smoothedProgress = targetProgress;
         }
 
-        const totalFrames = frameManager.getFrameCount();
-        if (totalFrames > 0) {
-          const frameIndex = Math.min(
-            totalFrames - 1,
-            Math.max(0, Math.floor(smoothedProgress * totalFrames))
-          );
+        const totalFrames = frameManager.getFrameCount() || 240;
+        const frameIndex = Math.min(
+          totalFrames - 1,
+          Math.max(0, Math.floor(smoothedProgress * totalFrames))
+        );
 
-          if (frameIndex !== lastDrawnFrameRef.current) {
-            const frameBitmap = frameManager.getFrame(frameIndex);
-            if (frameBitmap) {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-              // Maintain aspect ratio cover / contain
-              const cw = canvas.width;
-              const ch = canvas.height;
-              const fw = frameBitmap.width;
-              const fh = frameBitmap.height;
-
-              const scale = Math.max(cw / fw, ch / fh);
-              const drawW = fw * scale;
-              const drawH = fh * scale;
-              const dx = (cw - drawW) / 2;
-              const dy = (ch - drawH) / 2;
-
-              ctx.drawImage(frameBitmap, dx, dy, drawW, drawH);
-              lastDrawnFrameRef.current = frameIndex;
-              setCurrentFrameIndex(frameIndex);
-              setCurrentProgress(smoothedProgress);
-              onProgressChange?.(smoothedProgress, frameIndex);
-            }
-          }
+        if (frameIndex !== lastDrawnFrameRef.current) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          frameManager.renderDirect(ctx, smoothedProgress, frameIndex, canvas.width, canvas.height);
+          lastDrawnFrameRef.current = frameIndex;
+          setCurrentFrameIndex(frameIndex);
+          setCurrentProgress(smoothedProgress);
+          onProgressChange?.(smoothedProgress, frameIndex);
         }
       }
 

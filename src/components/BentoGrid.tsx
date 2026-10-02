@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Compass, ShieldCheck, Zap, Layers, Sparkles, Sliders, Activity, Info } from 'lucide-react';
+import { Compass, ShieldCheck, Zap, Layers, Sparkles, Sliders, Activity, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface BentoGridProps {
   onOpenInspector: () => void;
@@ -9,35 +9,33 @@ interface BentoGridProps {
 interface GranularMetric {
   label: string;
   value: string;
-  unit?: string;
   detail: string;
 }
 
 const CARD_METRICS: Record<string, { title: string; subsystem: string; metrics: GranularMetric[] }> = {
   card1: {
-    title: 'SAROS & RING COMMAND ARCHITECTURE',
-    subsystem: 'CALIBRE 9002 EPICYCLIC GEARING',
+    title: 'SAROS PLANETARY GEARING METRICS',
+    subsystem: 'CALIBRE 9002 EPICYCLIC TRAIN',
     metrics: [
       {
         label: 'Planetary Differential',
         value: '1 : 1.033',
-        unit: 'ratio',
-        detail: 'Epicyclic wheel gearing for 30/31-day discernment',
+        detail: 'Epicyclic ratio for automatic 30/31-day discernment',
       },
       {
-        label: 'Kinematic Components',
-        value: '4 wheels / 2 trains',
+        label: 'Kinematic Train',
+        value: '4 wheels / 2 ratios',
         detail: 'Patented low-friction wheel train without levers',
       },
       {
         label: 'Ring Command Detents',
-        value: '3 distinct positions',
-        detail: '60° angular phase: Month, Local Date, Reference 24H',
+        value: '3 positions (60° phase)',
+        detail: 'Outer bezel sets Month, Local Time, Reference Time',
       },
       {
-        label: 'Annual Adjustment',
+        label: 'Annual Reset Cycle',
         value: '1 cycle / 365 days',
-        detail: 'Single annual intervention required on March 1st',
+        detail: 'Single annual manual reset required on March 1st',
       },
     ],
   },
@@ -47,39 +45,37 @@ const CARD_METRICS: Record<string, { title: string; subsystem: string; metrics: 
     metrics: [
       {
         label: 'Pinion Module Pitch',
-        value: '0.12 mm',
-        unit: 'pitch',
-        detail: 'High-precision micro-module involute tooth geometry',
+        value: '0.12 mm involute',
+        detail: 'High-precision micro-module tooth geometry',
       },
       {
         label: 'Sub-Dial Center Offset',
-        value: '3.85 mm',
-        unit: 'south',
+        value: '3.85 mm south',
         detail: 'Decentralized geometric balance relative to stem axis',
       },
       {
         label: 'Pointer Alignment Tolerance',
-        value: '±0.015 mm',
-        detail: 'Red inverted triangle optical registration precision',
+        value: '±0.015 mm optical',
+        detail: 'Red inverted triangle registration accuracy',
       },
       {
-        label: 'Jumping Hour Quickset',
+        label: 'Jumping Hour Step',
         value: '1-hour increments',
         detail: 'Independent star wheel jump without stopping seconds',
       },
     ],
   },
   card3: {
-    title: 'WHITE ROLESOR METALLURGICAL SPECS',
+    title: 'WHITE ROLESOR METALLURGY METRICS',
     subsystem: 'CASE ARCHITECTURE & HERMETIC SEAL',
     metrics: [
       {
-        label: 'Fluted Bezel Facets',
+        label: 'Fluted Bezel Geometry',
         value: '60 radial flutes',
         detail: '6.00° angular spacing with mirror-polished ridges',
       },
       {
-        label: '18ct White Gold Purity',
+        label: '18ct White Gold Alloy',
         value: '750‰ Au / 125‰ Pd',
         detail: 'Corrosion-proof palladium-stabilized white alloy',
       },
@@ -96,7 +92,7 @@ const CARD_METRICS: Record<string, { title: string; subsystem: string; metrics: 
     ],
   },
   card4: {
-    title: 'CALIBRE 9002 CHRONOMETRIC SPECS',
+    title: 'CALIBRE 9002 CHRONOMETRIC METRICS',
     subsystem: 'SUPERLATIVE PERPETUAL KINEMATICS',
     metrics: [
       {
@@ -128,12 +124,11 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
   onOpenAcquisition,
 }) => {
   const [activeTab, setActiveTab] = useState<'movement' | 'case' | 'complications'>('movement');
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [activeMetricsCard, setActiveMetricsCard] = useState<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const [parallaxOffset, setParallaxOffset] = useState<number>(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
 
-  // Check prefers-reduced-motion
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
@@ -143,7 +138,6 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
     return () => mediaQuery.removeEventListener('change', listener);
   }, []);
 
-  // Smooth Native Parallax Calculation
   useEffect(() => {
     if (prefersReducedMotion) return;
 
@@ -158,7 +152,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
 
       if (rect.bottom >= 0 && rect.top <= windowH) {
         const centerY = rect.top + rect.height / 2 - windowH / 2;
-        targetOffset = Math.max(-600, Math.min(600, centerY));
+        targetOffset = Math.max(-400, Math.min(400, centerY));
       }
     };
 
@@ -180,54 +174,42 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
     };
   }, [prefersReducedMotion]);
 
-  // Parallax Multipliers
-  const kickerY = prefersReducedMotion ? 0 : Math.max(-10, Math.min(10, parallaxOffset * 0.025));
-  const headlineY = prefersReducedMotion ? 0 : Math.max(-18, Math.min(18, parallaxOffset * 0.055));
-  const bodyY = prefersReducedMotion ? 0 : Math.max(-8, Math.min(8, parallaxOffset * 0.018));
-  const diagramY = prefersReducedMotion ? 0 : Math.max(-14, Math.min(14, parallaxOffset * -0.035));
-  const metricY = prefersReducedMotion ? 0 : Math.max(-12, Math.min(12, parallaxOffset * 0.04));
+  // Restrained Parallax Multipliers
+  const kickerY = prefersReducedMotion ? 0 : Math.max(-8, Math.min(8, parallaxOffset * 0.02));
+  const headlineY = prefersReducedMotion ? 0 : Math.max(-14, Math.min(14, parallaxOffset * 0.04));
+  const bodyY = prefersReducedMotion ? 0 : Math.max(-6, Math.min(6, parallaxOffset * 0.015));
 
-  // Render Granular Metrics Tooltip
-  const renderGranularTooltip = (cardId: string) => {
+  const toggleMetrics = (cardId: string) => {
+    setActiveMetricsCard((prev) => (prev === cardId ? null : cardId));
+  };
+
+  const renderInlineMetrics = (cardId: string) => {
     const data = CARD_METRICS[cardId];
     if (!data) return null;
-    const isHovered = hoveredCard === cardId;
+    const isExpanded = activeMetricsCard === cardId;
+
+    if (!isExpanded) return null;
 
     return (
-      <div
-        className={`absolute inset-x-4 bottom-4 md:bottom-6 z-30 transition-all duration-300 pointer-events-none ${
-          isHovered
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-3'
-        }`}
-      >
-        <div className="bg-[#121312]/95 border border-[#d4af37]/60 shadow-[0_12px_32px_rgba(0,0,0,0.9),0_0_15px_rgba(212,175,55,0.12)] p-4 md:p-5 backdrop-blur-none text-left space-y-3">
-          <div className="flex items-center justify-between border-b border-[#2d2e2d] pb-2 text-[10px] font-mono">
-            <span className="text-[#d4af37] flex items-center gap-1.5 font-semibold tracking-wider uppercase">
-              <Activity className="w-3.5 h-3.5" />
-              <span>{data.title}</span>
-            </span>
-            <span className="text-[#8d8d89] hidden sm:inline">{data.subsystem}</span>
-          </div>
+      <div className="my-4 p-4 hairline-border bg-[#141514] animate-in fade-in zoom-in-98 duration-200 space-y-3">
+        <div className="flex items-center justify-between border-b border-[#2d2e2d] pb-2 text-[10px] font-mono">
+          <span className="text-[#d4af37] flex items-center gap-1.5 font-semibold tracking-wider uppercase">
+            <Activity className="w-3.5 h-3.5" />
+            <span>{data.title}</span>
+          </span>
+          <span className="text-[#8d8d89]">{data.subsystem}</span>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs font-mono">
-            {data.metrics.map((m, idx) => (
-              <div key={idx} className="flex flex-col py-1 border-b border-[#222422]">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[#8d8d89] text-[11px] truncate">{m.label}</span>
-                  <span className="text-[#d8d8d4] font-semibold text-right whitespace-nowrap">
-                    {m.value}
-                  </span>
-                </div>
-                <div className="text-[9.5px] text-[#6d6f6f] truncate mt-0.5">{m.detail}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+          {data.metrics.map((m, idx) => (
+            <div key={idx} className="p-2 border border-[#262826] bg-[#171817] flex flex-col justify-between">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[#8d8d89] text-[11px] truncate">{m.label}</span>
+                <span className="text-[#d8d8d4] font-semibold text-right">{m.value}</span>
               </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between text-[9px] font-mono text-[#585a5a] pt-1">
-            <span>SUPERLATIVE CHRONOMETER ATELIER METRICS</span>
-            <span className="text-[#d4af37]">GENEVA TOLERANCE ±0.015MM</span>
-          </div>
+              <div className="text-[10px] text-[#6d6f6f] mt-1">{m.detail}</div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -236,17 +218,17 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
   return (
     <section
       ref={sectionRef}
-      className="relative bg-[#171817] text-[#d8d8d4] py-24 px-6 md:px-12 border-t border-[#3c3b3a] overflow-hidden"
+      className="relative bg-[#171817] text-[#d8d8d4] py-24 px-6 md:px-12 border-t border-[#3c3b3a]"
     >
-      <div className="max-w-7xl mx-auto space-y-24">
-        {/* Section Header with Parallax Depth Layers */}
+      <div className="max-w-7xl mx-auto space-y-20">
+        {/* Section Header */}
         <div className="space-y-4 max-w-2xl relative">
           <div
             style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
             className="text-xs uppercase tracking-[0.2em] text-[#d4af37] font-mono transition-transform ease-out will-change-transform flex items-center gap-2"
           >
             <span>Haute Horlogerie · Reference 336934 Dossier</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]/60 animate-amber-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-amber-pulse" />
           </div>
 
           <h2
@@ -260,18 +242,16 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
             style={{ transform: `translate3d(0, ${bodyY}px, 0)` }}
             className="text-sm md:text-base text-[#8d8d89] leading-relaxed transition-transform ease-out will-change-transform"
           >
-            Engineered for international travelers. Hover over any specification module to expand granular micromechanical metrics and telemetry.
+            Engineered for international travelers. A harmonious synthesis of mechanical precision combining the dual time zone display with the Saros annual calendar and Ring Command fluted bezel.
           </p>
         </div>
 
-        {/* Asymmetric Bento Grid with Interactive Hover Expansion & Metric Tooltips */}
+        {/* Asymmetric Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
           {/* Card 1: Large Featured Card (8 cols) — Saros Annual Calendar & Ring Command */}
           <div
             id="calibre"
-            onMouseEnter={() => setHoveredCard('card1')}
-            onMouseLeave={() => setHoveredCard(null)}
-            className="md:col-span-8 hairline-border bg-[#191a19] p-8 md:p-12 flex flex-col justify-between group transition-all duration-300 ease-out hover:scale-[1.012] hover:-translate-y-1 hover:border-[#d4af37]/80 hover:shadow-[0_20px_45px_rgba(0,0,0,0.85),0_0_20px_rgba(212,175,55,0.08)] relative overflow-hidden"
+            className="md:col-span-8 hairline-border bg-[#191a19] p-8 md:p-12 flex flex-col justify-between group transition-all duration-300 ease-out hover:border-[#d4af37]/70 hover:shadow-lg relative"
           >
             <div className="space-y-4">
               <div
@@ -279,11 +259,14 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                 className="flex items-center justify-between text-xs font-mono text-[#6d6f6f] transition-transform ease-out will-change-transform"
               >
                 <span>01. MECHANICAL GENIUS</span>
-                {/* Granular Metrics Indicator Badge */}
-                <div className="flex items-center gap-1.5 px-2 py-0.5 border border-[#3c3b3a] group-hover:border-[#d4af37] text-[10px] text-[#8d8d89] group-hover:text-[#d4af37] transition-colors">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-amber-pulse" />
-                  <span>GRANULAR METRICS</span>
-                </div>
+                <button
+                  onClick={() => toggleMetrics('card1')}
+                  className="flex items-center gap-1.5 px-2.5 py-1 border border-[#3c3b3a] hover:border-[#d4af37] text-[10px] text-[#8d8d89] hover:text-[#d4af37] transition-colors cursor-pointer"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                  <span>{activeMetricsCard === 'card1' ? 'CLOSE METRICS' : 'GRANULAR METRICS'}</span>
+                  {activeMetricsCard === 'card1' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
               </div>
 
               <h3
@@ -301,21 +284,19 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
               </p>
             </div>
 
+            {/* Inline Granular Metrics Drawer */}
+            {renderInlineMetrics('card1')}
+
             {/* Inset Mechanical Blueprint Diagram */}
-            <div
-              style={{ transform: `translate3d(0, ${diagramY}px, 0)` }}
-              className="my-8 py-6 hairline-border bg-[#141514] flex items-center justify-center overflow-hidden transition-transform ease-out will-change-transform group-hover:border-[#585a5a]"
-            >
+            <div className="my-8 py-6 hairline-border bg-[#141514] flex items-center justify-center overflow-hidden">
               <svg
                 viewBox="0 0 500 240"
                 className="w-full max-w-md h-auto text-[#6d6f6f] select-none"
                 fill="none"
               >
-                {/* Dial outer boundary */}
                 <circle cx="250" cy="120" r="105" stroke="#3c3b3a" strokeWidth="1.5" />
                 <circle cx="250" cy="120" r="95" stroke="#1d4233" strokeWidth="6" />
 
-                {/* 12 Month Apertures */}
                 {Array.from({ length: 12 }).map((_, i) => {
                   const angle = (i * Math.PI) / 6;
                   const x = 250 + Math.cos(angle) * 88;
@@ -335,14 +316,11 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                   );
                 })}
 
-                {/* Off-centre 24-Hour Disc */}
                 <circle cx="250" cy="132" r="50" fill="#e8ecea" stroke="#8d8d89" strokeWidth="1.5" />
                 <circle cx="250" cy="132" r="34" fill="#1c4233" stroke="#8d8d89" strokeWidth="1" />
 
-                {/* Red Inverted Pointer */}
                 <polygon points="250,90 244,82 256,82" fill="#d92534" stroke="#ffffff" strokeWidth="0.8" />
 
-                {/* Technical Callout Lines */}
                 <line x1="250" y1="82" x2="330" y2="45" stroke="#585a5a" strokeWidth="0.75" />
                 <text x="335" y="49" fill="#d4af37" fontSize="10" fontFamily="JetBrains Mono">
                   FIXED RED REFERENCE TRIANGLE
@@ -369,17 +347,12 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                 <span>→</span>
               </button>
             </div>
-
-            {/* Granular Watchmaking Metrics Tooltip */}
-            {renderGranularTooltip('card1')}
           </div>
 
           {/* Card 2: Medium Card (4 cols) — Off-Centre 24-Hour Disc */}
           <div
             id="guilloche"
-            onMouseEnter={() => setHoveredCard('card2')}
-            onMouseLeave={() => setHoveredCard(null)}
-            className="md:col-span-4 hairline-border bg-[#191a19] p-8 flex flex-col justify-between group transition-all duration-300 ease-out hover:scale-[1.015] hover:-translate-y-1 hover:border-[#d4af37]/80 hover:shadow-[0_20px_45px_rgba(0,0,0,0.85),0_0_20px_rgba(212,175,55,0.08)] relative overflow-hidden"
+            className="md:col-span-4 hairline-border bg-[#191a19] p-8 flex flex-col justify-between group transition-all duration-300 ease-out hover:border-[#d4af37]/70 hover:shadow-lg relative"
           >
             <div className="space-y-4">
               <div
@@ -387,10 +360,13 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                 className="flex items-center justify-between text-xs font-mono text-[#6d6f6f] transition-transform ease-out will-change-transform"
               >
                 <span>02. TRAVEL HOROLOGY</span>
-                <div className="flex items-center gap-1.5 px-2 py-0.5 border border-[#3c3b3a] group-hover:border-[#d4af37] text-[10px] text-[#8d8d89] group-hover:text-[#d4af37] transition-colors">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-amber-pulse" />
-                  <span>METRICS</span>
-                </div>
+                <button
+                  onClick={() => toggleMetrics('card2')}
+                  className="flex items-center gap-1.5 px-2 py-0.5 border border-[#3c3b3a] hover:border-[#d4af37] text-[10px] text-[#8d8d89] hover:text-[#d4af37] transition-colors cursor-pointer"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                  <span>{activeMetricsCard === 'card2' ? 'CLOSE' : 'METRICS'}</span>
+                </button>
               </div>
 
               <h3
@@ -408,11 +384,10 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
               </p>
             </div>
 
-            {/* 24h Disc Circular Geometry Diagram with Inset Parallax */}
-            <div
-              style={{ transform: `translate3d(0, ${diagramY}px, 0)` }}
-              className="my-6 py-6 hairline-border bg-[#141514] flex items-center justify-center transition-transform ease-out will-change-transform group-hover:border-[#585a5a]"
-            >
+            {renderInlineMetrics('card2')}
+
+            {/* 24h Disc Circular Geometry Diagram */}
+            <div className="my-6 py-6 hairline-border bg-[#141514] flex items-center justify-center">
               <div className="relative w-32 h-32 rounded-full border border-[#3c3b3a] flex items-center justify-center bg-[#191a19]">
                 <div className="w-24 h-24 rounded-full border border-[#585a5a] flex items-center justify-center bg-[#e8ecea]">
                   <div className="w-14 h-14 rounded-full bg-[#1c4233] border border-[#8d8d89] flex items-center justify-center">
@@ -426,27 +401,23 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
             <div className="text-xs font-mono text-[#6d6f6f] pt-4 border-t border-[#3c3b3a]">
               INDICATION: 24-HOUR CONTINUOUS INVERSION
             </div>
-
-            {/* Granular Watchmaking Metrics Tooltip */}
-            {renderGranularTooltip('card2')}
           </div>
 
           {/* Card 3: Medium Card (4 cols) — 42mm White Rolesor & Fluted Bezel */}
-          <div
-            onMouseEnter={() => setHoveredCard('card3')}
-            onMouseLeave={() => setHoveredCard(null)}
-            className="md:col-span-4 hairline-border bg-[#191a19] p-8 flex flex-col justify-between group transition-all duration-300 ease-out hover:scale-[1.015] hover:-translate-y-1 hover:border-[#d4af37]/80 hover:shadow-[0_20px_45px_rgba(0,0,0,0.85),0_0_20px_rgba(212,175,55,0.08)] relative overflow-hidden"
-          >
+          <div className="md:col-span-4 hairline-border bg-[#191a19] p-8 flex flex-col justify-between group transition-all duration-300 ease-out hover:border-[#d4af37]/70 hover:shadow-lg relative">
             <div className="space-y-4">
               <div
                 style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
                 className="flex items-center justify-between text-xs font-mono text-[#6d6f6f] transition-transform ease-out will-change-transform"
               >
                 <span>03. METALLURGY</span>
-                <div className="flex items-center gap-1.5 px-2 py-0.5 border border-[#3c3b3a] group-hover:border-[#d4af37] text-[10px] text-[#8d8d89] group-hover:text-[#d4af37] transition-colors">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-amber-pulse" />
-                  <span>METRICS</span>
-                </div>
+                <button
+                  onClick={() => toggleMetrics('card3')}
+                  className="flex items-center gap-1.5 px-2 py-0.5 border border-[#3c3b3a] hover:border-[#d4af37] text-[10px] text-[#8d8d89] hover:text-[#d4af37] transition-colors cursor-pointer"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                  <span>{activeMetricsCard === 'card3' ? 'CLOSE' : 'METRICS'}</span>
+                </button>
               </div>
 
               <h3
@@ -464,10 +435,9 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
               </p>
             </div>
 
-            <div
-              style={{ transform: `translate3d(0, ${metricY}px, 0)` }}
-              className="my-6 space-y-3 font-mono text-xs text-[#8d8d89] transition-transform ease-out will-change-transform"
-            >
+            {renderInlineMetrics('card3')}
+
+            <div className="my-6 space-y-3 font-mono text-xs text-[#8d8d89]">
               <div className="flex justify-between py-1.5 border-b border-[#2d2e2d]">
                 <span>CASE DIAMETER</span>
                 <span className="text-[#d8d8d4] tabular-nums">42.0 MM</span>
@@ -489,27 +459,24 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
             <div className="text-xs font-mono text-[#6d6f6f] pt-4 border-t border-[#3c3b3a]">
               WINDING CROWN: TWINLOCK DOUBLE WATERPROOF
             </div>
-
-            {/* Granular Watchmaking Metrics Tooltip */}
-            {renderGranularTooltip('card3')}
           </div>
 
           {/* Card 4: Wide Card (8 cols) — Calibre 9002 Movement */}
-          <div
-            onMouseEnter={() => setHoveredCard('card4')}
-            onMouseLeave={() => setHoveredCard(null)}
-            className="md:col-span-8 hairline-border bg-[#191a19] p-8 md:p-12 flex flex-col justify-between group transition-all duration-300 ease-out hover:scale-[1.012] hover:-translate-y-1 hover:border-[#d4af37]/80 hover:shadow-[0_20px_45px_rgba(0,0,0,0.85),0_0_20px_rgba(212,175,55,0.08)] relative overflow-hidden"
-          >
+          <div className="md:col-span-8 hairline-border bg-[#191a19] p-8 md:p-12 flex flex-col justify-between group transition-all duration-300 ease-out hover:border-[#d4af37]/70 hover:shadow-lg relative">
             <div className="space-y-4">
               <div
                 style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
                 className="flex items-center justify-between text-xs font-mono text-[#6d6f6f] transition-transform ease-out will-change-transform"
               >
                 <span>04. PERPETUAL KINEMATICS</span>
-                <div className="flex items-center gap-1.5 px-2 py-0.5 border border-[#3c3b3a] group-hover:border-[#d4af37] text-[10px] text-[#8d8d89] group-hover:text-[#d4af37] transition-colors">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-amber-pulse" />
-                  <span>GRANULAR METRICS</span>
-                </div>
+                <button
+                  onClick={() => toggleMetrics('card4')}
+                  className="flex items-center gap-1.5 px-2.5 py-1 border border-[#3c3b3a] hover:border-[#d4af37] text-[10px] text-[#8d8d89] hover:text-[#d4af37] transition-colors cursor-pointer"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                  <span>{activeMetricsCard === 'card4' ? 'CLOSE METRICS' : 'GRANULAR METRICS'}</span>
+                  {activeMetricsCard === 'card4' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
               </div>
 
               <h3
@@ -527,11 +494,10 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
               </p>
             </div>
 
-            {/* Metric Counters with Lifted Parallax Layer */}
-            <div
-              style={{ transform: `translate3d(0, ${metricY}px, 0)` }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6 pt-4 border-t border-[#3c3b3a] transition-transform ease-out will-change-transform"
-            >
+            {renderInlineMetrics('card4')}
+
+            {/* Metric Counters */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6 pt-4 border-t border-[#3c3b3a]">
               <div className="space-y-1">
                 <div className="text-xs font-mono text-[#6d6f6f]">POWER RESERVE</div>
                 <div className="text-xl font-semibold text-[#d8d8d4] font-display tabular-nums">72 HRS</div>
@@ -558,9 +524,6 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
               <span>OSCILLATOR: BLUE PARACHROM HAIRSPRING</span>
               <span className="text-[#d4af37]">SUPERLATIVE CHRONOMETER</span>
             </div>
-
-            {/* Granular Watchmaking Metrics Tooltip */}
-            {renderGranularTooltip('card4')}
           </div>
         </div>
 

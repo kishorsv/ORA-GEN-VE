@@ -23,61 +23,34 @@ export class FrameSequenceManager {
     onProgress?: (loaded: number, total: number) => void
   ): Promise<void> {
     this.customImage = img;
-    this.frames.forEach((bitmap) => bitmap.close());
-    this.frames = [];
-
-    const offscreen = document.createElement('canvas');
-    offscreen.width = this.width;
-    offscreen.height = this.height;
-    const ctx = offscreen.getContext('2d', { alpha: false });
-    if (!ctx) return;
-
-    const batchSize = 12;
-    for (let i = 0; i < this.totalFrames; i += batchSize) {
-      const end = Math.min(i + batchSize, this.totalFrames);
-      for (let f = i; f < end; f++) {
-        const progress = f / (this.totalFrames - 1);
-        this.renderWatchFrame(ctx, progress, f);
-        const bitmap = await createImageBitmap(offscreen);
-        this.frames.push(bitmap);
-      }
-      onProgress?.(this.frames.length, this.totalFrames);
-      await new Promise((r) => setTimeout(r, 4));
+    for (let i = 1; i <= 10; i++) {
+      onProgress?.(Math.floor((i / 10) * this.totalFrames), this.totalFrames);
+      await new Promise((r) => setTimeout(r, 6));
     }
-
-    offscreen.width = 0;
-    offscreen.height = 0;
   }
 
   public async preloadAll(
     onProgress: (loaded: number, total: number) => void
   ): Promise<ImageBitmap[]> {
-    const offscreen = document.createElement('canvas');
-    offscreen.width = this.width;
-    offscreen.height = this.height;
-    const ctx = offscreen.getContext('2d', { alpha: false });
-
-    if (!ctx) {
-      throw new Error('Canvas 2D context not available');
+    for (let i = 1; i <= 12; i++) {
+      onProgress(Math.floor((i / 12) * this.totalFrames), this.totalFrames);
+      await new Promise((r) => setTimeout(r, 10));
     }
-
-    const batchSize = 12;
-    for (let i = 0; i < this.totalFrames; i += batchSize) {
-      const end = Math.min(i + batchSize, this.totalFrames);
-      for (let f = i; f < end; f++) {
-        const progress = f / (this.totalFrames - 1);
-        this.renderWatchFrame(ctx, progress, f);
-        const bitmap = await createImageBitmap(offscreen);
-        this.frames.push(bitmap);
-      }
-      onProgress(this.frames.length, this.totalFrames);
-      await new Promise((r) => setTimeout(r, 4));
-    }
-
-    offscreen.width = 0;
-    offscreen.height = 0;
-
     return this.frames;
+  }
+
+  public renderDirect(
+    ctx: CanvasRenderingContext2D,
+    progress: number,
+    frameIndex: number,
+    w?: number,
+    h?: number
+  ): void {
+    if (w && h) {
+      this.width = w;
+      this.height = h;
+    }
+    this.renderWatchFrame(ctx, progress, frameIndex);
   }
 
   public getFrame(index: number): ImageBitmap | null {
@@ -86,7 +59,7 @@ export class FrameSequenceManager {
   }
 
   public getFrameCount(): number {
-    return this.frames.length;
+    return this.totalFrames;
   }
 
   public destroy(): void {
