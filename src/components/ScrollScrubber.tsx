@@ -17,10 +17,10 @@ interface ChapterMark {
 }
 
 const CHAPTERS: ChapterMark[] = [
-  { id: 'ch1', label: '01 · SILHOUETTE', frameStart: 0, frameEnd: 59, progress: 0.08 },
-  { id: 'ch2', label: '02 · PROFILE 8.2MM', frameStart: 60, frameEnd: 119, progress: 0.33 },
-  { id: 'ch3', label: '03 · GUILLOCHÉ', frameStart: 120, frameEnd: 179, progress: 0.61 },
-  { id: 'ch4', label: '04 · ACQUIRE', frameStart: 180, frameEnd: 239, progress: 0.88 },
+  { id: 'ch1', label: '01 · FLUTED BEZEL', frameStart: 0, frameEnd: 59, progress: 0.08 },
+  { id: 'ch2', label: '02 · 24H DUAL TIME', frameStart: 60, frameEnd: 119, progress: 0.33 },
+  { id: 'ch3', label: '03 · SAROS CALENDAR', frameStart: 120, frameEnd: 179, progress: 0.61 },
+  { id: 'ch4', label: '04 · CALIBRE 9002', frameStart: 180, frameEnd: 239, progress: 0.88 },
 ];
 
 export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
@@ -272,13 +272,13 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
           }}
         >
           <div className="text-xs uppercase tracking-[0.25em] text-[#8d8d89] font-mono mb-4">
-            Horological Architecture · Series 01
+            Haute Horlogerie · Reference 336934
           </div>
           <h1 className="text-4xl md:text-7xl lg:text-8xl font-semibold tracking-[-0.04em] text-[#d8d8d4] font-display max-w-4xl text-balance">
-            ENGINEERED IN GENEVA
+            ROLEX SKY-DWELLER
           </h1>
           <p className="mt-4 text-xs md:text-sm text-[#8d8d89] max-w-md tracking-wider uppercase font-mono">
-            Calibre 900 · 240 Native Canvas Frames
+            Mint Green Sunray Dial · 42mm Oystersteel
           </p>
 
           {/* Subtle Pulsating Scroll Guide Indicator */}
@@ -305,18 +305,18 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
           style={{ opacity: ch2Opacity }}
         >
           <div className="text-xs uppercase tracking-[0.2em] text-[#d4af37] font-mono mb-2">
-            Chapter 01 · Kinetic Architecture
+            Chapter 01 · Dual Time Zone
           </div>
           <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.04em] text-[#d8d8d4] font-display leading-[0.95]">
-            THE CALIBRE 900. MICRO-ROTOR PRECISION.
+            OFF-CENTRE 24-HOUR DISC.
           </h2>
           <p className="mt-4 text-sm text-[#8d8d89] leading-relaxed max-w-sm">
-            8.2mm architectural profile machined from solid Grade 5 titanium. Engineered with a decentralized 22k gold mass that silently charges 70 hours of chronometric autonomy.
+            Simultaneous dual time zone reading. The off-centre rotating 24-hour disc indicates home reference time with a fixed inverted red triangle, clearly distinguishing day from night.
           </p>
           <div className="mt-4 flex items-center gap-4 text-xs font-mono text-[#6d6f6f]">
-            <span>THICKNESS: 8.2MM</span>
+            <span>SYSTEM: RING COMMAND BEZEL</span>
             <span>·</span>
-            <span>MASS: 22K AU</span>
+            <span>BEZEL: 18CT WHITE GOLD</span>
           </div>
         </div>
 
@@ -326,18 +326,18 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
           style={{ opacity: ch3Opacity }}
         >
           <div className="text-xs uppercase tracking-[0.2em] text-[#d4af37] font-mono mb-2">
-            Chapter 02 · Métiers d'Art
+            Chapter 02 · Saros Annual Calendar
           </div>
           <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.04em] text-[#d8d8d4] font-display leading-[0.95]">
-            GUILLOCHÉ. CUT BY HAND. NO SHORTCUTS.
+            MINT GREEN SUNRAY & RED MONTH APERTURE.
           </h2>
           <p className="mt-4 text-sm text-[#8d8d89] leading-relaxed max-w-sm ml-auto">
-            Each solid sterling silver dial requires 14 hours of continuous hand-cranked turning on a 1924 manual rose-engine lathe. A microscopic hobnail matrix engineered to capture light with absolute restraint.
+            The patented Saros mechanism automatically differentiates between 30 and 31-day months. The current month is revealed in deep red within one of the 12 discreet apertures encircling the dial.
           </p>
           <div className="mt-4 flex items-center justify-end gap-4 text-xs font-mono text-[#6d6f6f]">
-            <span>LATHE: 1924 ROSE-ENGINE</span>
+            <span>CYCLOPS: 2.5X MAGNIFICATION</span>
             <span>·</span>
-            <span>TOLERANCE: ±0.005MM</span>
+            <span>DIAL: RADIANT MINT SUNRAY</span>
           </div>
         </div>
 
@@ -348,20 +348,20 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
         >
           {/* Top subtle marker */}
           <div className="pt-20 text-xs font-mono tracking-widest text-[#8d8d89] uppercase">
-            Atelier Ora Genève · Allocation Series 2026
+            Geneva Manufacture · Superlative Chronometer
           </div>
 
           {/* Bottom Acquisition Action */}
           <div className="w-full max-w-md text-center space-y-4 pb-14 pointer-events-auto">
             <div className="space-y-1">
               <div className="text-xs font-mono text-[#d4af37] tracking-widest uppercase">
-                Series 01 · 100 Numbered Pieces
+                Oyster Perpetual Sky-Dweller
               </div>
               <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#d8d8d4] font-display">
-                ORA CALIBRE 900 TITANIUM
+                MINT GREEN OYSTERSTEEL
               </h3>
               <div className="text-sm font-mono text-[#6d6f6f] tabular-nums">
-                $18,400 USD · CHF 16,800
+                $15,650 USD · CHF 14,300
               </div>
             </div>
 
@@ -372,7 +372,7 @@ export const ScrollScrubber: React.FC<ScrollScrubberProps> = ({
               Acquire Timepiece
             </button>
             <p className="text-[11px] text-[#585a5a] font-mono">
-              Complimentary armored Swiss courier delivery & 5-year manufacture warranty.
+              Official Swiss Chronometer (COSC) + Rolex certification after casing (-2/+2 sec/day).
             </p>
           </div>
         </div>

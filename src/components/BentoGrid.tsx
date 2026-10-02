@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Compass, ShieldCheck, Zap, Layers, Sparkles, Sliders } from 'lucide-react';
 
 interface BentoGridProps {
@@ -10,240 +10,364 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
   onOpenInspector,
   onOpenAcquisition,
 }) => {
-  const [activeTab, setActiveTab] = useState<'movement' | 'case' | 'finishing'>('movement');
+  const [activeTab, setActiveTab] = useState<'movement' | 'case' | 'complications'>('movement');
+  const sectionRef = useRef<HTMLElement>(null);
+  const [parallaxOffset, setParallaxOffset] = useState<number>(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
+
+  // Check prefers-reduced-motion
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', listener);
+    return () => mediaQuery.removeEventListener('change', listener);
+  }, []);
+
+  // Smooth Native Parallax Calculation
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+
+    let animId: number;
+    let targetOffset = 0;
+    let currentOffset = 0;
+
+    const handleScroll = () => {
+      if (!sectionRef.current) return;
+      const rect = sectionRef.current.getBoundingClientRect();
+      const windowH = window.innerHeight;
+
+      // Only calculate when section is entering or within viewport
+      if (rect.bottom >= 0 && rect.top <= windowH) {
+        // Distance from viewport center
+        const centerY = rect.top + rect.height / 2 - windowH / 2;
+        // Clamp normalized offset
+        targetOffset = Math.max(-600, Math.min(600, centerY));
+      }
+    };
+
+    const loop = () => {
+      // Smooth lerping for optical depth perception
+      currentOffset += (targetOffset - currentOffset) * 0.12;
+      if (Math.abs(targetOffset - currentOffset) > 0.1) {
+        setParallaxOffset(Math.round(currentOffset * 10) / 10);
+      }
+      animId = requestAnimationFrame(loop);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    animId = requestAnimationFrame(loop);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(animId);
+    };
+  }, [prefersReducedMotion]);
+
+  // Optical Depth Perception Multipliers (Clamped to avoid layout overlap)
+  // Tier 1: Micro-tags / Kickers
+  const kickerY = prefersReducedMotion ? 0 : Math.max(-10, Math.min(10, parallaxOffset * 0.025));
+  // Tier 2: Primary Headlines (floating foreground layer)
+  const headlineY = prefersReducedMotion ? 0 : Math.max(-18, Math.min(18, parallaxOffset * 0.055));
+  // Tier 3: Body Copy & Descriptive Paragraphs (mid-ground layer)
+  const bodyY = prefersReducedMotion ? 0 : Math.max(-8, Math.min(8, parallaxOffset * 0.018));
+  // Tier 4: Technical Diagrams / Schematics (inset mechanical layer)
+  const diagramY = prefersReducedMotion ? 0 : Math.max(-14, Math.min(14, parallaxOffset * -0.035));
+  // Tier 5: Metric Numerals (lifted foreground numbers)
+  const metricY = prefersReducedMotion ? 0 : Math.max(-12, Math.min(12, parallaxOffset * 0.04));
 
   return (
-    <section className="relative bg-[#171817] text-[#d8d8d4] py-24 px-6 md:px-12 border-t border-[#3c3b3a]">
+    <section
+      ref={sectionRef}
+      className="relative bg-[#171817] text-[#d8d8d4] py-24 px-6 md:px-12 border-t border-[#3c3b3a] overflow-hidden"
+    >
       <div className="max-w-7xl mx-auto space-y-24">
-        {/* Section Header */}
-        <div className="space-y-4 max-w-2xl">
-          <div className="text-xs uppercase tracking-[0.2em] text-[#d4af37] font-mono">
-            Haute Horlogerie · Engineering Dossier
+        {/* Section Header with Parallax Depth Layers */}
+        <div className="space-y-4 max-w-2xl relative">
+          <div
+            style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
+            className="text-xs uppercase tracking-[0.2em] text-[#d4af37] font-mono transition-transform ease-out will-change-transform flex items-center gap-2"
+          >
+            <span>Haute Horlogerie · Reference 336934 Dossier</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]/60 animate-amber-pulse" />
           </div>
-          <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.04em] text-[#d8d8d4] font-display">
-            CRAFTSMANSHIP BEYOND COMPROMISE
+
+          <h2
+            style={{ transform: `translate3d(0, ${headlineY}px, 0)` }}
+            className="text-3xl md:text-5xl font-semibold tracking-[-0.04em] text-[#d8d8d4] font-display transition-transform ease-out will-change-transform"
+          >
+            THE ARCHITECTURE OF GLOBAL TIME
           </h2>
-          <p className="text-sm md:text-base text-[#8d8d89] leading-relaxed">
-            Every millimeter of the ORA Calibre 900 represents a rejection of modern mass automation. Conceived, machined, and hand-finished within our Geneva atelier.
+
+          <p
+            style={{ transform: `translate3d(0, ${bodyY}px, 0)` }}
+            className="text-sm md:text-base text-[#8d8d89] leading-relaxed transition-transform ease-out will-change-transform"
+          >
+            Engineered for international travelers. An intuitive symphony of mechanical genius combining the dual time zone display with the revolutionary Saros annual calendar and rotatable Ring Command fluted bezel.
           </p>
         </div>
 
-        {/* Asymmetric Bento Grid */}
+        {/* Asymmetric Bento Grid with Cohesive Typographic Parallax Layers */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Card 1: Large Featured Card (8 cols) — The Micro-Rotor Calibre */}
+          {/* Card 1: Large Featured Card (8 cols) — Saros Annual Calendar & Ring Command */}
           <div
             id="calibre"
-            className="md:col-span-8 hairline-border bg-[#191a19] p-8 md:p-12 flex flex-col justify-between group hover:border-[#585a5a] transition-colors"
+            className="md:col-span-8 hairline-border bg-[#191a19] p-8 md:p-12 flex flex-col justify-between group hover:border-[#585a5a] transition-colors relative overflow-hidden"
           >
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs font-mono text-[#6d6f6f]">
-                <span>01. KINEMATIC INTEGRITY</span>
-                <span>GENEVA CALIBRE 900</span>
+              <div
+                style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
+                className="flex items-center justify-between text-xs font-mono text-[#6d6f6f] transition-transform ease-out will-change-transform"
+              >
+                <span>01. MECHANICAL GENIUS</span>
+                <span>SAROS ANNUAL CALENDAR</span>
               </div>
-              <h3 className="text-2xl md:text-4xl font-semibold text-[#d8d8d4] font-display">
-                DECENTRALIZED 22K GOLD MICRO-ROTOR
+
+              <h3
+                style={{ transform: `translate3d(0, ${headlineY}px, 0)` }}
+                className="text-2xl md:text-4xl font-semibold text-[#d8d8d4] font-display transition-transform ease-out will-change-transform"
+              >
+                PATENTED SAROS MECHANISM & RING COMMAND
               </h3>
-              <p className="text-sm text-[#8d8d89] leading-relaxed max-w-xl">
-                Traditional central rotors add up to 2.5mm of dead thickness to a watch movement. By embedding a high-inertia 22K solid yellow gold micro-rotor directly within the bridge architecture, the Calibre 900 achieves an astonishing 8.2mm profile while generating 70 continuous hours of autonomous chronometric torque.
+
+              <p
+                style={{ transform: `translate3d(0, ${bodyY}px, 0)` }}
+                className="text-sm text-[#8d8d89] leading-relaxed max-w-xl transition-transform ease-out will-change-transform"
+              >
+                Named after the astronomical cycle of solar and lunar eclipses, the Saros mechanism requires only four gear wheels and two gear ratios to automatically distinguish between 30-day and 31-day months. Only one adjustment is required each year: on the 1st of March. The rotatable Ring Command fluted bezel links the external bezel directly to the movement to select calendar, local time, or reference time functions.
               </p>
             </div>
 
-            {/* Micro-rotor Architectural Blueprint Illustration */}
-            <div className="my-8 py-6 hairline-border bg-[#141514] flex items-center justify-center overflow-hidden">
+            {/* Inset Mechanical Blueprint Diagram (Opposite Parallax Rate for Optical Depth) */}
+            <div
+              style={{ transform: `translate3d(0, ${diagramY}px, 0)` }}
+              className="my-8 py-6 hairline-border bg-[#141514] flex items-center justify-center overflow-hidden transition-transform ease-out will-change-transform"
+            >
               <svg
                 viewBox="0 0 500 240"
                 className="w-full max-w-md h-auto text-[#6d6f6f] select-none"
                 fill="none"
               >
-                {/* Movement baseplate outline */}
-                <circle cx="250" cy="120" r="100" stroke="#3c3b3a" strokeWidth="1.5" />
-                <circle cx="250" cy="120" r="92" stroke="#252625" strokeDasharray="4 4" />
+                {/* Dial outer boundary */}
+                <circle cx="250" cy="120" r="105" stroke="#3c3b3a" strokeWidth="1.5" />
+                <circle cx="250" cy="120" r="95" stroke="#1d4233" strokeWidth="6" />
 
-                {/* Geneva Stripes lines */}
-                {[-70, -50, -30, -10, 10, 30, 50, 70].map((offset) => (
-                  <line
-                    key={offset}
-                    x1={250 + offset}
-                    y1="30"
-                    x2={250 + offset}
-                    y2="210"
-                    stroke="#222322"
-                    strokeWidth="2"
-                  />
-                ))}
+                {/* 12 Month Apertures */}
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const angle = (i * Math.PI) / 6;
+                  const x = 250 + Math.cos(angle) * 88;
+                  const y = 120 + Math.sin(angle) * 88;
+                  const isAugust = i === 4;
+                  return (
+                    <rect
+                      key={i}
+                      x={x - 2.5}
+                      y={y - 4}
+                      width="5"
+                      height="8"
+                      fill={isAugust ? '#d92534' : '#141514'}
+                      stroke={isAugust ? '#ff4d5a' : '#3c3b3a'}
+                      strokeWidth="1"
+                    />
+                  );
+                })}
 
-                {/* 22K Rotor Sector */}
-                <path
-                  d="M 250 120 L 320 80 A 85 85 0 0 1 320 160 Z"
-                  fill="#d4af37"
-                  fillOpacity="0.85"
-                  stroke="#876915"
-                  strokeWidth="1.5"
-                />
-                <circle cx="250" cy="120" r="14" fill="#2d2e2d" stroke="#585a5a" />
-                <circle cx="250" cy="120" r="5" fill="#9c1c44" />
+                {/* Off-centre 24-Hour Disc */}
+                <circle cx="250" cy="132" r="50" fill="#e8ecea" stroke="#8d8d89" strokeWidth="1.5" />
+                <circle cx="250" cy="132" r="34" fill="#1c4233" stroke="#8d8d89" strokeWidth="1" />
 
-                {/* Balance Wheel */}
-                <circle cx="190" cy="120" r="32" stroke="#8d8d89" strokeWidth="1" />
-                <line x1="190" y1="88" x2="190" y2="152" stroke="#8d8d89" />
-                <line x1="158" y1="120" x2="222" y2="120" stroke="#8d8d89" />
+                {/* Red Inverted Pointer */}
+                <polygon points="250,90 244,82 256,82" fill="#d92534" stroke="#ffffff" strokeWidth="0.8" />
 
                 {/* Technical Callout Lines */}
-                <line x1="320" y1="80" x2="380" y2="50" stroke="#585a5a" strokeWidth="0.75" />
-                <text x="385" y="54" fill="#d4af37" fontSize="10" fontFamily="JetBrains Mono">
-                  22K AU OSCILLATING MASS
+                <line x1="250" y1="82" x2="330" y2="45" stroke="#585a5a" strokeWidth="0.75" />
+                <text x="335" y="49" fill="#d4af37" fontSize="10" fontFamily="JetBrains Mono">
+                  FIXED RED REFERENCE TRIANGLE
                 </text>
 
-                <line x1="190" y1="88" x2="120" y2="50" stroke="#585a5a" strokeWidth="0.75" />
-                <text x="50" y="54" fill="#8d8d89" fontSize="10" fontFamily="JetBrains Mono">
-                  VARIABLE INERTIA BALANCE
+                <line x1="312" y1="182" x2="370" y2="182" stroke="#585a5a" strokeWidth="0.75" />
+                <text x="375" y="186" fill="#d92534" fontSize="10" fontFamily="JetBrains Mono">
+                  AUGUST MONTH APERTURE
                 </text>
               </svg>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#3c3b3a] text-xs font-mono text-[#8d8d89]">
               <div className="flex items-center gap-4">
-                <span>FREQUENCY: 28,800 VPH (4 HZ)</span>
+                <span>ANNUAL ADJUSTMENTS: 1 PER YEAR</span>
                 <span>·</span>
-                <span>AUTONOMY: 70 HOURS</span>
+                <span>SYSTEM: RING COMMAND 3-POSITION</span>
               </div>
               <button
                 onClick={onOpenInspector}
                 className="text-[#d4af37] hover:text-[#e4bf47] transition-colors flex items-center gap-1 cursor-pointer"
               >
-                <span>Examine Movement In 3D</span>
+                <span>Examine Complications</span>
                 <span>→</span>
               </button>
             </div>
           </div>
 
-          {/* Card 2: Medium Card (4 cols) — Hand-Cut Guilloché */}
+          {/* Card 2: Medium Card (4 cols) — Off-Centre 24-Hour Disc */}
           <div
             id="guilloche"
-            className="md:col-span-4 hairline-border bg-[#191a19] p-8 flex flex-col justify-between group hover:border-[#585a5a] transition-colors"
+            className="md:col-span-4 hairline-border bg-[#191a19] p-8 flex flex-col justify-between group hover:border-[#585a5a] transition-colors relative overflow-hidden"
           >
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs font-mono text-[#6d6f6f]">
-                <span>02. MÉTIERS D'ART</span>
-                <span>CLOUS DE PARIS</span>
+              <div
+                style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
+                className="flex items-center justify-between text-xs font-mono text-[#6d6f6f] transition-transform ease-out will-change-transform"
+              >
+                <span>02. TRAVEL HOROLOGY</span>
+                <span>DUAL TIME ZONE</span>
               </div>
-              <h3 className="text-xl md:text-2xl font-semibold text-[#d8d8d4] font-display">
-                14 HOURS PER DIAL
+
+              <h3
+                style={{ transform: `translate3d(0, ${headlineY}px, 0)` }}
+                className="text-xl md:text-2xl font-semibold text-[#d8d8d4] font-display transition-transform ease-out will-change-transform"
+              >
+                OFF-CENTRE 24H DISC
               </h3>
-              <p className="text-xs md:text-sm text-[#8d8d89] leading-relaxed">
-                Cut into 925 sterling silver using a restored 1924 rose-engine lathe. Each hobnail pyramid is cut manually at micro-tolerances. One slip ruinous to the entire silver blank.
+
+              <p
+                style={{ transform: `translate3d(0, ${bodyY}px, 0)` }}
+                className="text-xs md:text-sm text-[#8d8d89] leading-relaxed transition-transform ease-out will-change-transform"
+              >
+                The traveler reads reference home time via the rotating off-centre disc, while local time is read through traditional center hands jumping instantaneously by hour increments without interrupting the seconds.
               </p>
             </div>
 
-            {/* Rose Engine Geometric Rosette Diagram */}
-            <div className="my-6 py-6 hairline-border bg-[#141514] flex items-center justify-center">
-              <svg viewBox="0 0 200 200" className="w-36 h-36 text-[#585a5a]" fill="none">
-                <circle cx="100" cy="100" r="90" stroke="#3c3b3a" strokeWidth="1" />
-                <circle cx="100" cy="100" r="60" stroke="#3c3b3a" strokeWidth="0.75" />
-                <circle cx="100" cy="100" r="30" stroke="#3c3b3a" strokeWidth="0.75" />
-                {Array.from({ length: 24 }).map((_, i) => {
-                  const angle = (i * Math.PI) / 12;
-                  return (
-                    <line
-                      key={i}
-                      x1={100 + Math.cos(angle) * 30}
-                      y1={100 + Math.sin(angle) * 30}
-                      x2={100 + Math.cos(angle) * 90}
-                      y2={100 + Math.sin(angle) * 90}
-                      stroke={i % 2 === 0 ? '#6d6f6f' : '#3c3b3a'}
-                      strokeWidth="1"
-                    />
-                  );
-                })}
-                <circle cx="100" cy="100" r="4" fill="#d4af37" />
-              </svg>
+            {/* 24h Disc Circular Geometry Diagram with Inset Parallax */}
+            <div
+              style={{ transform: `translate3d(0, ${diagramY}px, 0)` }}
+              className="my-6 py-6 hairline-border bg-[#141514] flex items-center justify-center transition-transform ease-out will-change-transform"
+            >
+              <div className="relative w-32 h-32 rounded-full border border-[#3c3b3a] flex items-center justify-center bg-[#191a19]">
+                <div className="w-24 h-24 rounded-full border border-[#585a5a] flex items-center justify-center bg-[#e8ecea]">
+                  <div className="w-14 h-14 rounded-full bg-[#1c4233] border border-[#8d8d89] flex items-center justify-center">
+                    <span className="text-[10px] font-mono font-bold text-white">24H</span>
+                  </div>
+                </div>
+                <div className="absolute top-1 text-[#d92534] text-xs font-mono">▲</div>
+              </div>
             </div>
 
             <div className="text-xs font-mono text-[#6d6f6f] pt-4 border-t border-[#3c3b3a]">
-              MATERIAL: SOLID STERLING SILVER 925
+              INDICATION: 24-HOUR CONTINUOUS INVERSION
             </div>
           </div>
 
-          {/* Card 3: Medium Card (4 cols) — Grade 5 Titanium Monocoque */}
-          <div className="md:col-span-4 hairline-border bg-[#191a19] p-8 flex flex-col justify-between group hover:border-[#585a5a] transition-colors">
+          {/* Card 3: Medium Card (4 cols) — 42mm White Rolesor & Fluted Bezel */}
+          <div className="md:col-span-4 hairline-border bg-[#191a19] p-8 flex flex-col justify-between group hover:border-[#585a5a] transition-colors relative overflow-hidden">
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs font-mono text-[#6d6f6f]">
+              <div
+                style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
+                className="flex items-center justify-between text-xs font-mono text-[#6d6f6f] transition-transform ease-out will-change-transform"
+              >
                 <span>03. METALLURGY</span>
-                <span>GRADE 5 TITANIUM</span>
+                <span>WHITE ROLESOR</span>
               </div>
-              <h3 className="text-xl md:text-2xl font-semibold text-[#d8d8d4] font-display">
-                FEATHERWEIGHT STRENGTH
+
+              <h3
+                style={{ transform: `translate3d(0, ${headlineY}px, 0)` }}
+                className="text-xl md:text-2xl font-semibold text-[#d8d8d4] font-display transition-transform ease-out will-change-transform"
+              >
+                OYSTERSTEEL & WHITE GOLD
               </h3>
-              <p className="text-xs md:text-sm text-[#8d8d89] leading-relaxed">
-                Titanium Grade 5 (Ti-6Al-4V) offers twice the tensile strength of stainless steel at 45% less weight. Hand-polished mirror anglage along the flanks transitions seamlessly into longitudinal satin brushwork.
+
+              <p
+                style={{ transform: `translate3d(0, ${bodyY}px, 0)` }}
+                className="text-xs md:text-sm text-[#8d8d89] leading-relaxed transition-transform ease-out will-change-transform"
+              >
+                A harmonious marriage of two noble metals: the extreme corrosion resistance of Oystersteel paired with the unmistakable luster of an 18ct white gold fluted Ring Command bezel.
               </p>
             </div>
 
-            <div className="my-6 space-y-3 font-mono text-xs text-[#8d8d89]">
+            <div
+              style={{ transform: `translate3d(0, ${metricY}px, 0)` }}
+              className="my-6 space-y-3 font-mono text-xs text-[#8d8d89] transition-transform ease-out will-change-transform"
+            >
               <div className="flex justify-between py-1.5 border-b border-[#2d2e2d]">
                 <span>CASE DIAMETER</span>
-                <span className="text-[#d8d8d4] tabular-nums">39.0 MM</span>
+                <span className="text-[#d8d8d4] tabular-nums">42.0 MM</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-[#2d2e2d]">
-                <span>TOTAL THICKNESS</span>
-                <span className="text-[#d8d8d4] tabular-nums">8.2 MM</span>
+                <span>BEZEL</span>
+                <span className="text-[#d8d8d4]">18CT WHITE GOLD FLUTED</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-[#2d2e2d]">
-                <span>LUG-TO-LUG SPAN</span>
-                <span className="text-[#d8d8d4] tabular-nums">46.5 MM</span>
+                <span>BRACELET</span>
+                <span className="text-[#d8d8d4]">OYSTER 3-PIECE SOLID</span>
               </div>
               <div className="flex justify-between py-1.5">
-                <span>WATER RESISTANCE</span>
-                <span className="text-[#d8d8d4] tabular-nums">50 METERS (5 ATM)</span>
+                <span>WATERPROOFNESS</span>
+                <span className="text-[#d8d8d4] tabular-nums">100 METERS (330 FT)</span>
               </div>
             </div>
 
             <div className="text-xs font-mono text-[#6d6f6f] pt-4 border-t border-[#3c3b3a]">
-              FINISH: HAND-POLISHED ANGLAGE CHAMFERS
+              WINDING CROWN: TWINLOCK DOUBLE WATERPROOF
             </div>
           </div>
 
-          {/* Card 4: Wide Card (8 cols) — Hand Finishing & Anglage */}
-          <div className="md:col-span-8 hairline-border bg-[#191a19] p-8 md:p-12 flex flex-col justify-between group hover:border-[#585a5a] transition-colors">
+          {/* Card 4: Wide Card (8 cols) — Calibre 9002 Movement */}
+          <div className="md:col-span-8 hairline-border bg-[#191a19] p-8 md:p-12 flex flex-col justify-between group hover:border-[#585a5a] transition-colors relative overflow-hidden">
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs font-mono text-[#6d6f6f]">
-                <span>04. FINISHING STANDARDS</span>
-                <span>POINÇON TRADITIONNEL</span>
+              <div
+                style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
+                className="flex items-center justify-between text-xs font-mono text-[#6d6f6f] transition-transform ease-out will-change-transform"
+              >
+                <span>04. PERPETUAL KINEMATICS</span>
+                <span>MANUFACTURE CALIBRE 9002</span>
               </div>
-              <h3 className="text-2xl md:text-3xl font-semibold text-[#d8d8d4] font-display">
-                INTERNAL ANGLES & GENTIAN WOOD POLISHING
+
+              <h3
+                style={{ transform: `translate3d(0, ${headlineY}px, 0)` }}
+                className="text-2xl md:text-3xl font-semibold text-[#d8d8d4] font-display transition-transform ease-out will-change-transform"
+              >
+                72-HOUR AUTONOMY & CHRONERGY ESCAPEMENT
               </h3>
-              <p className="text-sm text-[#8d8d89] leading-relaxed max-w-xl">
-                Every steel lever, bridge flank, and screw head undergoes black polishing (poli noir) using diamond paste on natural elder pith and Swiss gentian wood. Sharp internal corners—the definitive hallmark of genuine hand finishing that no CNC milling machine can reproduce—are chiseled with hand burnishers.
+
+              <p
+                style={{ transform: `translate3d(0, ${bodyY}px, 0)` }}
+                className="text-sm text-[#8d8d89] leading-relaxed max-w-xl transition-transform ease-out will-change-transform"
+              >
+                Entirely developed and manufactured in Geneva, Calibre 9002 features the patented Chronergy escapement made of nickel-phosphorus, making it insensitive to magnetic fields. Fitted with a blue Parachrom hairspring and high-performance Paraflex shock absorbers for peerless chronometric stability.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6 pt-4 border-t border-[#3c3b3a]">
+            {/* Metric Counters with Lifted Parallax Layer */}
+            <div
+              style={{ transform: `translate3d(0, ${metricY}px, 0)` }}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6 pt-4 border-t border-[#3c3b3a] transition-transform ease-out will-change-transform"
+            >
               <div className="space-y-1">
-                <div className="text-xs font-mono text-[#6d6f6f]">JEWELS</div>
-                <div className="text-xl font-semibold text-[#d8d8d4] font-display tabular-nums">31</div>
-                <div className="text-[11px] text-[#8d8d89]">Synthetic rubies</div>
+                <div className="text-xs font-mono text-[#6d6f6f]">POWER RESERVE</div>
+                <div className="text-xl font-semibold text-[#d8d8d4] font-display tabular-nums">72 HRS</div>
+                <div className="text-[11px] text-[#8d8d89]">Perpetual rotor</div>
               </div>
               <div className="space-y-1">
-                <div className="text-xs font-mono text-[#6d6f6f]">PARTS</div>
-                <div className="text-xl font-semibold text-[#d8d8d4] font-display tabular-nums">184</div>
-                <div className="text-[11px] text-[#8d8d89]">Hand-beveled</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs font-mono text-[#6d6f6f]">TOLERANCE</div>
+                <div className="text-xs font-mono text-[#6d6f6f]">PRECISION</div>
                 <div className="text-xl font-semibold text-[#d8d8d4] font-display tabular-nums">±2 SEC</div>
-                <div className="text-[11px] text-[#8d8d89]">Daily deviation</div>
+                <div className="text-[11px] text-[#8d8d89]">After casing</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs font-mono text-[#6d6f6f]">FREQUENCY</div>
+                <div className="text-xl font-semibold text-[#d8d8d4] font-display tabular-nums">28,800</div>
+                <div className="text-[11px] text-[#8d8d89]">Vibrations/hour (4Hz)</div>
               </div>
               <div className="space-y-1">
                 <div className="text-xs font-mono text-[#6d6f6f]">WARRANTY</div>
                 <div className="text-xl font-semibold text-[#d8d8d4] font-display tabular-nums">5 YRS</div>
-                <div className="text-[11px] text-[#8d8d89]">Manufacture backing</div>
+                <div className="text-[11px] text-[#8d8d89]">Green seal certified</div>
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-[#3c3b3a] text-xs font-mono text-[#6d6f6f]">
-              <span>ASSEMBLY: 1 WATCHMAKER / 1 TIMEPIECE</span>
-              <span className="text-[#d4af37]">GENEVA CERTIFIED</span>
+              <span>OSCILLATOR: BLUE PARACHROM HAIRSPRING</span>
+              <span className="text-[#d4af37]">SUPERLATIVE CHRONOMETER</span>
             </div>
           </div>
         </div>
@@ -252,11 +376,17 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
         <div id="specifications" className="space-y-6 pt-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#3c3b3a]">
             <div>
-              <div className="text-xs uppercase tracking-[0.2em] text-[#d4af37] font-mono">
+              <div
+                style={{ transform: `translate3d(0, ${kickerY}px, 0)` }}
+                className="text-xs uppercase tracking-[0.2em] text-[#d4af37] font-mono transition-transform ease-out will-change-transform"
+              >
                 Technical Matrix
               </div>
-              <h3 className="text-2xl md:text-3xl font-semibold text-[#d8d8d4] font-display">
-                FULL CHRONOMETRIC SPECIFICATIONS
+              <h3
+                style={{ transform: `translate3d(0, ${headlineY}px, 0)` }}
+                className="text-2xl md:text-3xl font-semibold text-[#d8d8d4] font-display transition-transform ease-out will-change-transform"
+              >
+                ROLEX SKY-DWELLER SPECIFICATIONS
               </h3>
             </div>
             <div className="flex items-center gap-2">
@@ -278,17 +408,17 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                     : 'text-[#8d8d89] hover:text-[#d8d8d4]'
                 }`}
               >
-                Case & Glass
+                Case & Bezel
               </button>
               <button
-                onClick={() => setActiveTab('finishing')}
+                onClick={() => setActiveTab('complications')}
                 className={`px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
-                  activeTab === 'finishing'
+                  activeTab === 'complications'
                     ? 'bg-[#3c3b3a] text-[#d8d8d4]'
                     : 'text-[#8d8d89] hover:text-[#d8d8d4]'
                 }`}
               >
-                Finishing
+                Complications
               </button>
             </div>
           </div>
@@ -306,29 +436,29 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                 {activeTab === 'movement' && (
                   <>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Calibre Designation</td>
-                      <td className="py-3.5 px-6 text-[#d8d8d4]">Atelier ORA Calibre 900</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">In-house mechanical automatic</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Movement Designation</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4]">Rolex Calibre 9002</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Manufacture perpetual self-winding</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Oscillating Winding Mass</td>
-                      <td className="py-3.5 px-6 text-[#d4af37]">22K Solid Gold Micro-Rotor</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Bi-directional ceramic ball bearing</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Precision Rating</td>
+                      <td className="py-3.5 px-6 text-[#d4af37]">−2/+2 sec/day</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Superlative Chronometer after casing</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Frequency & Escapement</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Oscillator & Hairspring</td>
                       <td className="py-3.5 px-6 tabular-nums">28,800 vph (4.0 Hz)</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Swiss lever with silicon hairspring</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Paramagnetic blue Parachrom hairspring</td>
                     </tr>
                     <tr>
                       <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Autonomous Power Reserve</td>
-                      <td className="py-3.5 px-6 tabular-nums">70 Hours</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Single high-elasticity mainspring barrel</td>
+                      <td className="py-3.5 px-6 tabular-nums">Approximately 72 Hours</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">High-capacity mainspring barrel</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Jewel Count & Parts</td>
-                      <td className="py-3.5 px-6 tabular-nums">31 Rubies · 184 Components</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">All bridges hand-beveled</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Shock Absorption</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4]">Paraflex shock absorbers</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">High-efficiency balance protection</td>
                     </tr>
                   </>
                 )}
@@ -336,54 +466,54 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                 {activeTab === 'case' && (
                   <>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Case Diameter & Thickness</td>
-                      <td className="py-3.5 px-6 tabular-nums">39.0 mm × 8.2 mm</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Ultra-thin architectural geometry</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Case Diameter</td>
+                      <td className="py-3.5 px-6 tabular-nums">42.0 mm</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Oyster architecture monobloc case</td>
                     </tr>
                     <tr>
                       <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Material Composition</td>
-                      <td className="py-3.5 px-6 text-[#d8d8d4]">Grade 5 Titanium (Ti-6Al-4V)</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Biocompatible & hypoallergenic</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4]">White Rolesor (Oystersteel & 18ct White Gold)</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Rolex proprietary metallurgy</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Front & Back Crystals</td>
-                      <td className="py-3.5 px-6 text-[#d8d8d4]">Double-Domed Box Sapphire</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">7-layer anti-reflective coating</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Bezel Architecture</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4]">Fluted, Bidirectional Ring Command</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Direct mechanical link to movement</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Crown Architecture</td>
-                      <td className="py-3.5 px-6 text-[#d8d8d4]">Fluted with micro-knurling</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Double O-ring gasket seal</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Crystal & Lens</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4]">Scratch-resistant Sapphire + Cyclops</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">2.5x date magnification with AR coating</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Static Water Resistance</td>
-                      <td className="py-3.5 px-6 tabular-nums">50 Meters (5 ATM / 165 Feet)</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">ISO 22810 chronometric standard</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Water Resistance</td>
+                      <td className="py-3.5 px-6 tabular-nums">100 Meters / 330 Feet</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Twinlock screw-down winding crown</td>
                     </tr>
                   </>
                 )}
 
-                {activeTab === 'finishing' && (
+                {activeTab === 'complications' && (
                   <>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Dial Engine Turning</td>
-                      <td className="py-3.5 px-6 text-[#d8d8d4]">Clous de Paris Hand Guilloché</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Manual 1924 rose-engine lathe</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Dual Time Zone</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4]">Off-Centre 24-Hour Rotating Disc</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Fixed red reference triangle indicator</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Bridge Decoration</td>
-                      <td className="py-3.5 px-6 text-[#d8d8d4]">Côtes de Genève & Perlage</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Hand-applied wooden peg graining</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Annual Calendar System</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4]">Saros Instantaneous Mechanism</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Automatically distinguishes 30/31 days</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Edge Chamfering</td>
-                      <td className="py-3.5 px-6 text-[#d4af37]">Polished Anglage</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Gentian wood finish with diamond paste</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Month Indication</td>
+                      <td className="py-3.5 px-6 text-[#d92534]">12 Discreet Apertures (August Red)</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Positioned on outer hour index ring</td>
                     </tr>
                     <tr>
-                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Screws & Pinions</td>
-                      <td className="py-3.5 px-6 text-[#d8d8d4]">Black Polished (Poli Noir)</td>
-                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">Optically flat mirror surface</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4] font-medium">Luminescence Display</td>
+                      <td className="py-3.5 px-6 text-[#d8d8d4]">Chromalight Long-Lasting Blue Glow</td>
+                      <td className="py-3.5 px-6 hidden sm:table-cell text-[#6d6f6f]">High-legibility hour markers & hands</td>
                     </tr>
                   </>
                 )}

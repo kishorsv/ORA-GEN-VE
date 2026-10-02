@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Volume2, VolumeX, Image as ImageIcon } from 'lucide-react';
 
 interface WatchMilestone {
   frame: number;
@@ -13,64 +13,65 @@ const TECHNICAL_MILESTONES: WatchMilestone[] = [
   {
     frame: 0,
     progress: 0.0,
-    label: 'Frontal Silhouette',
+    label: 'Mint Green Sunray Dial',
     tag: 'DIAL',
-    description: 'Concentric Geneva dial geometry and satin-brushed titanium bezel',
+    description: 'Radiant sunray finish with 18ct white gold Chromalight baton indices',
   },
   {
     frame: 36,
     progress: 0.15,
-    label: 'Bezel Anglage & Glint',
-    tag: 'METALLURGY',
-    description: 'Hand-polished mirror chamfers reflecting directional light',
+    label: 'Fluted Ring Command Bezel',
+    tag: 'COMMAND',
+    description: '18ct white gold rotatable bezel directly setting functions via movement',
   },
   {
     frame: 72,
     progress: 0.30,
-    label: '8.2mm Ultra-Thin Profile',
-    tag: 'ARCHITECTURE',
-    description: 'Sculptural Grade 5 titanium case and knurled crown assembly',
+    label: '42mm Oyster Case & Links',
+    tag: 'OYSTERSTEEL',
+    description: 'Corrosion-resistant steel monobloc case and 3-piece solid link bracelet',
   },
   {
     frame: 112,
     progress: 0.47,
-    label: '22K Gold Micro-Rotor',
-    tag: 'KINEMATICS',
-    description: 'Decentralized high-density mass charging 70h autonomous reserve',
+    label: 'Off-Centre 24-Hour Disc',
+    tag: 'DUAL TIME',
+    description: 'Rotating 24-hour disc with fixed inverted red triangle for reference time',
   },
   {
     frame: 148,
     progress: 0.62,
-    label: 'Hand-Cut Guilloché',
-    tag: "MÉTIERS D'ART",
-    description: '1924 manual rose-engine Clous de Paris hobnail matrix',
+    label: 'Saros Annual Calendar',
+    tag: 'CALENDAR',
+    description: 'Revolutionary planetary gearing with deep red August aperture indicator',
   },
   {
     frame: 184,
     progress: 0.77,
-    label: '28,800 vph Escapement',
-    tag: 'CHRONOMETRY',
-    description: '4Hz Swiss lever escapement with anti-magnetic silicon hairspring',
+    label: 'Cyclops Date Lens',
+    tag: 'SAPPHIRE',
+    description: 'Convex magnifying lens enlarging the instantaneous date at 3 o’clock',
   },
   {
     frame: 216,
     progress: 0.90,
-    label: 'Geneva Seal Standards',
-    tag: 'FINISHING',
-    description: 'Black-polished steel and hand-beveled gentian wood anglage',
+    label: 'Calibre 9002 Perpetual',
+    tag: 'CHRONOMETRY',
+    description: 'Manufacture self-winding movement, Chronergy escapement & 72h reserve',
   },
   {
     frame: 239,
     progress: 1.0,
-    label: 'Series 01 Allocation',
-    tag: 'ACQUISITION',
-    description: 'Numbered annual allocation of 100 bespoke manufactured pieces',
+    label: 'Superlative Chronometer',
+    tag: 'CERTIFIED',
+    description: 'COSC and Rolex casing certification achieving ±2 seconds daily precision',
   },
 ];
 
 interface NavigationProps {
   onOpenAcquisition: () => void;
   onOpenInspector: () => void;
+  onOpenImageReplace?: () => void;
   isAudioActive: boolean;
   onToggleAudio: () => void;
   scrollProgress: number; // 0.0 to 1.0 across 240 frames
@@ -81,6 +82,7 @@ interface NavigationProps {
 export const Navigation: React.FC<NavigationProps> = ({
   onOpenAcquisition,
   onOpenInspector,
+  onOpenImageReplace,
   isAudioActive,
   onToggleAudio,
   scrollProgress,
@@ -257,8 +259,19 @@ export const Navigation: React.FC<NavigationProps> = ({
           </button>
         </nav>
 
-        {/* Zone 3: 1-2 primary actions */}
-        <div className="flex items-center gap-4">
+        {/* Zone 3: 1-2 primary actions + asset tool */}
+        <div className="flex items-center gap-3">
+          {onOpenImageReplace && (
+            <button
+              onClick={onOpenImageReplace}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[#3c3b3a] hover:border-[#d4af37] text-xs font-mono text-[#8d8d89] hover:text-[#d8d8d4] transition-colors cursor-pointer"
+              title="Replace Timepiece Image (Upload or URL)"
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-[#d4af37]" />
+              <span className="hidden sm:inline">Replace Image</span>
+            </button>
+          )}
+
           <button
             onClick={onToggleAudio}
             className="p-2 text-[#8d8d89] hover:text-[#d8d8d4] transition-colors cursor-pointer border border-transparent hover:border-[#3c3b3a]"

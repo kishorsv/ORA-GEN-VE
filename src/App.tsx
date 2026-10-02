@@ -11,6 +11,7 @@ import { ScrollScrubber } from './components/ScrollScrubber';
 import { BentoGrid } from './components/BentoGrid';
 import { WatchInspector } from './components/WatchInspector';
 import { AcquisitionDrawer } from './components/AcquisitionDrawer';
+import { ImageReplaceModal } from './components/ImageReplaceModal';
 import { Footer } from './components/Footer';
 
 export default function App() {
@@ -22,9 +23,11 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isAcquisitionOpen, setIsAcquisitionOpen] = useState(false);
+  const [isImageReplaceOpen, setIsImageReplaceOpen] = useState(false);
   const [isAudioActive, setIsAudioActive] = useState(false);
   const [canvasProgress, setCanvasProgress] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [customWatchImage, setCustomWatchImage] = useState<HTMLImageElement | null>(null);
 
   // Initialize and preload 240 frames
   useEffect(() => {
@@ -70,6 +73,11 @@ export default function App() {
     }
   };
 
+  const handleApplyCustomImage = async (img: HTMLImageElement | null) => {
+    await frameManager.setCustomImage(img);
+    setCustomWatchImage(img);
+  };
+
   const handleScrubClick = (targetProg: number) => {
     // Locate spacer container
     const spacer = document.querySelector('div[class*="h-[750vh]"]') as HTMLElement;
@@ -97,10 +105,11 @@ export default function App() {
         onEnter={() => setIsReady(true)}
       />
 
-      {/* Top Bar Contract (3 Zones) with Slim Horizontal Progress Bar */}
+      {/* Top Bar Contract (3 Zones) with Slim Horizontal Progress Bar & Replace Asset Action */}
       <Navigation
         onOpenAcquisition={() => setIsAcquisitionOpen(true)}
         onOpenInspector={() => setIsInspectorOpen(true)}
+        onOpenImageReplace={() => setIsImageReplaceOpen(true)}
         isAudioActive={isAudioActive}
         onToggleAudio={handleToggleAudio}
         scrollProgress={canvasProgress}
@@ -143,6 +152,14 @@ export default function App() {
       <AcquisitionDrawer
         isOpen={isAcquisitionOpen}
         onClose={() => setIsAcquisitionOpen(false)}
+      />
+
+      {/* Custom Timepiece Image Replacement Modal */}
+      <ImageReplaceModal
+        isOpen={isImageReplaceOpen}
+        onClose={() => setIsImageReplaceOpen(false)}
+        onApplyImage={handleApplyCustomImage}
+        currentImage={customWatchImage}
       />
 
       {/* Footer Hold-up */}
