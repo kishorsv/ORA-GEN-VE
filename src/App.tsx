@@ -12,6 +12,7 @@ import { BentoGrid } from './components/BentoGrid';
 import { WatchInspector } from './components/WatchInspector';
 import { AcquisitionDrawer } from './components/AcquisitionDrawer';
 import { ImageReplaceModal } from './components/ImageReplaceModal';
+import { TotalScrollProgressBar } from './components/TotalScrollProgressBar';
 import { Footer } from './components/Footer';
 
 export default function App() {
@@ -105,7 +106,10 @@ export default function App() {
         onEnter={() => setIsReady(true)}
       />
 
-      {/* Top Bar Contract (3 Zones) with Slim Horizontal Progress Bar & Replace Asset Action */}
+      {/* Subtle Fixed-Position Total Page Scroll Progress Bar (#d4af37) */}
+      <TotalScrollProgressBar />
+
+      {/* Top Bar Contract (3 Zones) with Sequence Progress Scrubber */}
       <Navigation
         onOpenAcquisition={() => setIsAcquisitionOpen(true)}
         onOpenInspector={() => setIsInspectorOpen(true)}
