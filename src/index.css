@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #050505;
+    --text-primary: #F5F2EA;
+    --accent-champagne: #C5A880;
+  }
+
+  html {
+    scroll-behavior: initial; /* Lenis handles smooth scrolling */
+    background-color: #050505;
+    color: #F5F2EA;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background-color: #050505;
+    color: #F5F2EA;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Editorial Serif Headings */
+  h1, h2, h3, .font-serif-luxury {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-feature-settings: "liga" 1, "dlig" 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* Technical Monospace & Data Labels */
+  .font-tech {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
+}
+
+/* Subtle Film Grain Texture Overlay */
+.film-grain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9990;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Radial Vignette Falloff */
+.vignette-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9980;
+  background: radial-gradient(circle at 50% 50%, rgba(5,5,5,0) 60%, rgba(3,3,3,0.7) 100%);
+}
+
+/* Custom Luxury Cursor for Desktop */
+@media (pointer: fine) {
+  body {
+    cursor: default;
+  }
+  
+  .custom-cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 5px;
+    background-color: #F5F2EA;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s;
+  }
+
+  .custom-cursor-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(197, 168, 128, 0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99998;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, background-color 0.3s;
+  }
+
+  .custom-cursor-ring.cursor-hover {
+    width: 68px;
+    height: 68px;
+    border-color: rgba(197, 168, 128, 0.8);
+    background-color: rgba(197, 168, 128, 0.06);
+  }
+
+  .custom-cursor-dot.cursor-hover {
+    width: 7px;
+    height: 7px;
+    background-color: #C5A880;
+  }
+}
+
+/* Luxury hairline borders */
+.border-luxury-hairline {
+  border-color: rgba(245, 242, 234, 0.08);
+}
+
+.border-luxury-champagne {
+  border-color: rgba(197, 168, 128, 0.25);
+}
+
+/* Subtle gold gradient line */
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(197, 168, 128, 0.4) 50%, transparent 100%);
+}
+
+/* Light sweep effect on watch components */
+@keyframes lightSweep {
+  0% { transform: translateX(-150%) skewX(-25deg); opacity: 0; }
+  30% { opacity: 0.15; }
+  70% { opacity: 0.15; }
+  100% { transform: translateX(250%) skewX(-25deg); opacity: 0; }
+}
+
+.light-sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  animation: lightSweep 9s infinite ease-in-out;
+  pointer-events: none;
+}
+
+/* Accessibility / Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .light-sweep {
+    display: none !important;
+  }
+}
