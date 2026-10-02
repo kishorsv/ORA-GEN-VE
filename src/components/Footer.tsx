@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, Check } from 'lucide-react';
+import type { DbSiteSettings } from '../types/database';
 
 interface FooterProps {
   onOpenAcquisition: () => void;
   onOpenManagement: () => void;
+  siteSettings: DbSiteSettings;
 }
 
 export const Footer: React.FC<FooterProps> = ({
   onOpenAcquisition,
   onOpenManagement,
+  siteSettings,
 }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
@@ -26,11 +29,11 @@ export const Footer: React.FC<FooterProps> = ({
   };
 
   return (
-    <footer id="maison" className="relative w-full bg-[#030303] text-[#F5F2EA] pt-32 pb-16 px-6 sm:px-12 lg:px-20 border-t border-white/[0.08] overflow-hidden">
+    <footer id="maison" className="relative w-full bg-[#030303] text-[#F4F1EA] pt-32 pb-16 px-6 sm:px-12 lg:px-20 border-t border-white/[0.08] overflow-hidden">
       {/* Background Ambience */}
-      <div 
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-luxury-champagne/[0.02] blur-[180px] pointer-events-none -z-10" 
-        aria-hidden="true" 
+      <div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-luxury-champagne/[0.02] blur-[180px] pointer-events-none -z-10"
+        aria-hidden="true"
       />
 
       <div className="max-w-7xl mx-auto flex flex-col justify-between">
@@ -42,10 +45,10 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="lg:col-span-5 space-y-6">
             <div>
               <span className="font-serif text-3xl sm:text-4xl tracking-[0.25em] text-luxury-ivory font-light">
-                ORA
+                {siteSettings.hero_title.split(' ')[0] || 'ORA'}
               </span>
               <span className="font-mono text-xs tracking-[0.4em] text-luxury-champagne ml-3">
-                GENÈVE
+                {siteSettings.hero_title.split(' ')[1] || 'GENÈVE'}
               </span>
               <span className="font-mono text-[9px] tracking-[0.3em] text-luxury-stone/60 block mt-2">
                 MANUFACTURE DE HAUTE HORLOGERIE · FONDÉE EN SUISSE
@@ -111,7 +114,7 @@ export const Footer: React.FC<FooterProps> = ({
                   onClick={onOpenManagement}
                   className="hover:text-luxury-champagne transition-colors"
                 >
-                  ATELIER VAULT & CURATION
+                  DATABASE & PORTAL
                 </button>
               </li>
             </ul>
@@ -152,7 +155,7 @@ export const Footer: React.FC<FooterProps> = ({
             )}
 
             <div className="pt-2 text-luxury-stone/50 font-mono text-[9px] tracking-widest">
-              STRICTLY LIMITED SUBSCRIPTION · MAXIMUM 1 DISPATCH MONTHLY
+              CONTACT: {siteSettings.contact_email} · {siteSettings.contact_phone}
             </div>
           </div>
         </div>
@@ -160,14 +163,14 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Large Watermark Typography in negative space */}
         <div className="py-16 text-center select-none pointer-events-none opacity-[0.035]">
           <span className="font-serif text-[clamp(3.5rem,14vw,12rem)] tracking-[0.2em] font-light text-white block uppercase leading-none">
-            ORA GENÈVE
+            {siteSettings.hero_title || 'ORA GENÈVE'}
           </span>
         </div>
 
         {/* Bottom Legal / Atelier Coordinates */}
         <div className="pt-10 border-t border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 font-mono text-[9px] tracking-[0.25em] text-luxury-stone/60">
           <div>
-            <span>© {new Date().getFullYear()} ORA GENÈVE SA · RUE DU RHÔNE 42, 1204 GENÈVE</span>
+            <span>© {new Date().getFullYear()} ORA GENÈVE SA · {siteSettings.contact_address}</span>
           </div>
 
           <div className="flex items-center gap-6">

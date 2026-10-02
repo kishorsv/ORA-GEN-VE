@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { Watch } from '../types/watch';
+import type { WatchModel } from '../types/database';
 import { ShieldCheck, Cpu, Gauge, Zap } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -7,7 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 interface CalibreMovementSectionProps {
-  watch: Watch;
+  watch: WatchModel | null;
 }
 
 interface ComponentPin {
@@ -89,10 +89,15 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
   const imageRef = useRef<HTMLImageElement>(null);
   const [activePin, setActivePin] = useState<ComponentPin>(MOVEMENT_PINS[0]);
 
+  const movementImage = watch?.movement_image || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=2400&q=95';
+
   useEffect(() => {
     const el = containerRef.current;
     const img = imageRef.current;
     if (!el || !img) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
 
     const ctx = gsap.context(() => {
       // Smooth movement parallax and slow scale on scroll
@@ -100,7 +105,7 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
         img,
         { scale: 1.0, y: -20, filter: 'brightness(0.7)' },
         {
-          scale: 1.14,
+          scale: 1.15,
           y: 40,
           filter: 'brightness(1.05)',
           ease: 'none',
@@ -115,18 +120,18 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
     }, el);
 
     return () => ctx.revert();
-  }, []);
+  }, [movementImage]);
 
   return (
     <section
       id="calibre"
       ref={containerRef}
-      className="relative w-full bg-[#030303] text-[#F5F2EA] py-32 px-6 sm:px-12 lg:px-20 overflow-hidden"
+      className="relative w-full bg-[#030303] text-[#F4F1EA] py-32 px-6 sm:px-12 lg:px-20 overflow-hidden"
     >
       {/* Background radial atmosphere */}
-      <div 
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(25,25,23,0.6)_0%,_rgba(3,3,3,1)_80%)] pointer-events-none" 
-        aria-hidden="true" 
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(25,25,23,0.6)_0%,_rgba(3,3,3,1)_80%)] pointer-events-none"
+        aria-hidden="true"
       />
 
       {/* Top Editorial Header */}
@@ -156,14 +161,12 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
       {/* Main Interactive Movement Stage */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
         
-        {/* Left / Center: High-Resolution Real Movement Photograph with Interactive Component Pins */}
+        {/* Real Movement Photography with Interactive Hotspots */}
         <div className="lg:col-span-8 relative aspect-[4/3] sm:aspect-[16/10] bg-[#0A0A0A] border border-white/[0.08] rounded-sm overflow-hidden group shadow-2xl shadow-black">
-          
-          {/* Real Macro Movement Photograph */}
           <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
             <img
               ref={imageRef}
-              src={watch.movementImage}
+              src={movementImage}
               alt="Calibre 900 Mechanical Movement - High Resolution Swiss Macro Photography"
               className="w-full h-full object-cover transition-all duration-700 select-none"
               loading="lazy"
@@ -183,7 +186,6 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
                   style={{ top: pin.top, left: pin.left }}
                   className="absolute -translate-x-1/2 -translate-y-1/2 z-20 group/pin"
                 >
-                  {/* Pin Clickable Target */}
                   <button
                     onClick={() => setActivePin(pin)}
                     onMouseEnter={() => setActivePin(pin)}
@@ -191,15 +193,12 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
                     data-cursor="PIN"
                     aria-label={`Inspect ${pin.name}`}
                   >
-                    {/* Pulsing Outer Ping */}
-                    <span 
+                    <span
                       className={`absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping ${
                         isSelected ? 'bg-luxury-champagne/40' : 'bg-white/20'
-                      }`} 
+                      }`}
                     />
-                    
-                    {/* Ring */}
-                    <span 
+                    <span
                       className={`relative inline-flex rounded-full h-4 w-4 sm:h-5 sm:w-5 items-center justify-center border transition-all duration-300 ${
                         isSelected
                           ? 'border-luxury-champagne bg-luxury-champagne text-black scale-110'
@@ -210,13 +209,12 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
                     </span>
                   </button>
 
-                  {/* Discrete floating label on image */}
-                  <div 
+                  <div
                     className={`hidden sm:block absolute whitespace-nowrap pointer-events-none transition-all duration-300 ${
                       pin.lineDirection.includes('right') ? 'left-8 top-1' : 'right-8 top-1 text-right'
                     } ${isSelected ? 'opacity-100 translate-x-0' : 'opacity-40 translate-x-1'}`}
                   >
-                    <span className="px-2 py-0.5 bg-black/80 backdrop-blur-md border border-white/10 font-mono text-[9px] tracking-widest text-luxury-ivory uppercase">
+                    <span className="px-2 py-0.5 bg-black/85 backdrop-blur-md border border-white/10 font-mono text-[9px] tracking-widest text-luxury-ivory uppercase">
                       {pin.name}
                     </span>
                   </div>
@@ -225,14 +223,13 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
             })}
           </div>
 
-          {/* Bottom Photo Caption */}
           <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between text-luxury-stone/60 font-mono text-[9px] tracking-widest pointer-events-none">
             <span>CALIBRE 900 · GENEVA MANUFACTURE</span>
             <span className="hidden sm:inline">SELECT ANY PIN TO EXAMINE HOROLOGY</span>
           </div>
         </div>
 
-        {/* Right: Technical Inspector Panel for Selected Component */}
+        {/* Right Inspector Panel */}
         <div className="lg:col-span-4 flex flex-col justify-between space-y-8 bg-[#070707] border border-white/[0.08] p-8 sm:p-10 rounded-sm">
           <div>
             <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-6">
@@ -240,7 +237,7 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
                 COMPONENT INSPECTION
               </span>
               <span className="font-mono text-[10px] tracking-widest text-luxury-stone/50">
-                0{MOVEMENT_PINS.findIndex(p => p.id === activePin.id) + 1} / 06
+                0{MOVEMENT_PINS.findIndex((p) => p.id === activePin.id) + 1} / 06
               </span>
             </div>
 
@@ -266,7 +263,6 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
             </div>
           </div>
 
-          {/* Matrix of Calibre 900 Benchmarks */}
           <div className="space-y-4 pt-6 border-t border-white/[0.08]">
             <h4 className="font-mono text-[9px] tracking-[0.25em] text-luxury-stone/80 uppercase">
               MANUFACTURE METRICS
@@ -285,7 +281,9 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
                 <Zap className="w-3.5 h-3.5 text-luxury-champagne mt-0.5 flex-shrink-0" />
                 <div>
                   <span className="font-mono text-[9px] text-white/50 block">POWER RESERVE</span>
-                  <span className="font-mono text-[11px] text-luxury-bone">72 HOURS</span>
+                  <span className="font-mono text-[11px] text-luxury-bone">
+                    {watch?.specs?.power_reserve || '72 HOURS'}
+                  </span>
                 </div>
               </div>
 
@@ -301,7 +299,9 @@ export const CalibreMovementSection: React.FC<CalibreMovementSectionProps> = ({ 
                 <Cpu className="w-3.5 h-3.5 text-luxury-champagne mt-0.5 flex-shrink-0" />
                 <div>
                   <span className="font-mono text-[9px] text-white/50 block">JEWEL BEARING</span>
-                  <span className="font-mono text-[11px] text-luxury-bone">33 RUBIES</span>
+                  <span className="font-mono text-[11px] text-luxury-bone">
+                    {watch?.specs?.jewels || '33 RUBIES'}
+                  </span>
                 </div>
               </div>
             </div>

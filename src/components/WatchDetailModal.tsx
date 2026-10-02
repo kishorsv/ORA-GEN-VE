@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import type { Watch } from '../types/watch';
-import { X, ArrowUpRight, ShieldCheck, Clock, Compass } from 'lucide-react';
+import type { WatchModel } from '../types/database';
+import { X, ArrowUpRight, ShieldCheck, Clock, Compass, Heart } from 'lucide-react';
 
 interface WatchDetailModalProps {
-  watch: Watch;
+  watch: WatchModel | null;
   isOpen: boolean;
   onClose: () => void;
-  onAcquire: (watch: Watch) => void;
+  onAcquire: (watch: WatchModel) => void;
+  isFavorite: boolean;
+  onToggleFavorite: (watchId: string) => void;
 }
 
 export const WatchDetailModal: React.FC<WatchDetailModalProps> = ({
@@ -14,99 +16,164 @@ export const WatchDetailModal: React.FC<WatchDetailModalProps> = ({
   isOpen,
   onClose,
   onAcquire,
+  isFavorite,
+  onToggleFavorite,
 }) => {
-  const [activeView, setActiveView] = useState<'front' | 'side' | 'back' | 'movement' | 'detail'>('front');
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || !watch) return null;
 
-  const currentImage = watch.galleryImages[activeView] || watch.heroImage;
+  // Aggregate all gallery images
+  const allImages: { url: string; label: string }[] = [];
+  if (watch.images && watch.images.length > 0) {
+    watch.images.forEach((img) => {
+      allImages.push({ url: img.image_url, label: img.image_type });
+    });
+  } else {
+    allImages.push({ url: watch.hero_image, label: 'hero' });
+    allImages.push({ url: watch.movement_image, label: 'movement' });
+  }
+
+  const currentImage = allImages[activeImageIndex] || { url: watch.hero_image, label: 'hero' };
+
+  const handleSelectThumbnail = (idx: number) => {
+    if (idx === activeImageIndex) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setActiveImageIndex(idx);
+      setIsTransitioning(false);
+    }, 180);
+  };
 
   const specsList = [
-    { label: 'REFERENCE', value: watch.specs.reference },
-    { label: 'CASE MATERIAL', value: watch.specs.caseMaterial },
-    { label: 'DIAMETER', value: watch.specs.diameter },
-    { label: 'THICKNESS', value: watch.specs.thickness },
-    { label: 'MANUFACTURE CALIBRE', value: watch.specs.movement },
-    { label: 'OSCILLATION FREQUENCY', value: watch.specs.frequency },
-    { label: 'JEWEL BEARINGS', value: watch.specs.jewels },
-    { label: 'POWER AUTONOMY', value: watch.specs.powerReserve },
-    { label: 'WATER RESISTANCE', value: watch.specs.waterResistance },
-    { label: 'CRYSTAL', value: watch.specs.crystal },
-    { label: 'STRAP / BRACELET', value: watch.specs.strap },
-    { label: 'CLASP MECHANISM', value: watch.specs.clasp },
-    { label: 'DECORATIVE FINISHING', value: watch.specs.finishing },
+    { label: 'REFERENCE', value: watch.specs?.reference || 'REF. 900-GENEVA' },
+    { label: 'CASE MATERIAL', value: watch.specs?.case_material || 'Grade 5 Titanium' },
+    { label: 'DIAMETER', value: watch.specs?.diameter || '41.5 mm' },
+    { label: 'THICKNESS', value: watch.specs?.thickness || '9.8 mm' },
+    { label: 'MANUFACTURE CALIBRE', value: watch.specs?.movement || 'Calibre 900' },
+    { label: 'FREQUENCY', value: watch.specs?.frequency || '28,800 vph (4.0 Hz)' },
+    { label: 'JEWEL BEARINGS', value: watch.specs?.jewels || '33 Synthetic Rubies' },
+    { label: 'POWER RESERVE', value: watch.specs?.power_reserve || '72 Hours' },
+    { label: 'WATER RESISTANCE', value: watch.specs?.water_resistance || '100 Meters / 10 ATM' },
+    { label: 'CRYSTAL', value: watch.specs?.crystal || 'Domed sapphire with anti-reflective coating' },
+    { label: 'STRAP / BRACELET', value: watch.specs?.strap || 'Bespoke hand-sewn alligator' },
+    { label: 'CLASP', value: watch.specs?.clasp || 'Titanium folding deployant' },
+    { label: 'FINISHING', value: watch.specs?.finishing || 'Hand-chamfered Côtes de Genève' },
   ];
 
+  const getAvailabilityBadge = (avail: WatchModel['availability']) => {
+    switch (avail) {
+      case 'AVAILABLE':
+        return 'text-emerald-400/90 border-emerald-500/30 bg-emerald-950/20';
+      case 'LIMITED AVAILABILITY':
+        return 'text-luxury-champagne border-luxury-champagne/40 bg-luxury-champagne/[0.08]';
+      case 'SOLD OUT':
+        return 'text-rose-400/80 border-rose-500/30 bg-rose-950/20';
+      case 'COMING SOON':
+        return 'text-sky-300/80 border-sky-400/30 bg-sky-950/20';
+    }
+  };
+
   return (
-    <div 
-      className="fixed inset-0 z-[9995] bg-[#050505]/95 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 lg:p-10 overflow-y-auto"
+    <div
+      className="fixed inset-0 z-[9995] bg-[#030303]/95 backdrop-blur-2xl flex items-center justify-center p-3 sm:p-6 lg:p-10 overflow-y-auto"
       onClick={onClose}
     >
-      <div 
-        className="relative w-full max-w-6xl bg-[#090909] border border-white/[0.08] shadow-2xl shadow-black rounded-sm overflow-hidden my-auto animate-fadeIn"
+      <div
+        className="relative w-full max-w-6xl bg-[#070707] border border-white/[0.08] shadow-2xl shadow-black rounded-sm overflow-hidden my-auto animate-fadeIn"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header Bar */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-white/[0.08] bg-[#060606]">
+        {/* Top Header */}
+        <div className="flex items-center justify-between px-6 sm:px-8 py-4 sm:py-5 border-b border-white/[0.08] bg-[#050505]">
           <div className="flex items-center gap-3">
-            <span className="font-serif text-xl tracking-[0.2em] text-luxury-ivory font-light">ORA</span>
-            <span className="font-mono text-[9px] tracking-[0.3em] text-luxury-champagne">GENÈVE · DOSSIER HORLOGER</span>
+            <span className="font-serif text-xl tracking-[0.2em] text-luxury-ivory font-light">
+              ORA
+            </span>
+            <span className="font-mono text-[9px] tracking-[0.3em] text-luxury-champagne">
+              GENÈVE · DOSSIER HORLOGER
+            </span>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 text-luxury-stone hover:text-luxury-ivory transition-colors"
-            data-cursor="CLOSE"
-            aria-label="Close detail modal"
-          >
-            <X className="w-5 h-5 stroke-[1.5]" />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Favorite button */}
+            <button
+              onClick={() => onToggleFavorite(watch.id)}
+              className={`p-2 rounded border transition-all ${
+                isFavorite
+                  ? 'border-luxury-champagne text-luxury-champagne bg-luxury-champagne/10'
+                  : 'border-white/10 text-luxury-stone hover:text-white hover:border-white/20'
+              }`}
+              data-cursor="FAVORITE"
+              title={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+            >
+              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2 text-luxury-stone hover:text-luxury-ivory transition-colors"
+              data-cursor="CLOSE"
+              aria-label="Close detail modal"
+            >
+              <X className="w-5 h-5 stroke-[1.5]" />
+            </button>
+          </div>
         </div>
 
-        {/* Main Catalogue Grid */}
+        {/* Catalogue Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 max-h-[85vh] overflow-y-auto">
           
-          {/* Left: Gallery & Large Watch Photography Showcase */}
-          <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-[#080808] border-b lg:border-b-0 lg:border-r border-white/[0.08]">
+          {/* Left Column: Advanced Smooth Transition Gallery */}
+          <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-[#050505] border-b lg:border-b-0 lg:border-r border-white/[0.08]">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <span className="font-mono text-[10px] tracking-[0.25em] text-luxury-champagne uppercase">
                   {watch.collection}
                 </span>
-                <span className="font-mono text-[10px] tracking-widest text-luxury-stone/60">
-                  {watch.specs.reference}
+
+                {/* Conditional Availability Badge */}
+                <span className={`px-2.5 py-0.5 border font-mono text-[9px] tracking-widest rounded-full uppercase ${getAvailabilityBadge(watch.availability)}`}>
+                  {watch.availability}
                 </span>
               </div>
 
-              {/* Main Image View */}
-              <div className="relative aspect-[4/3] flex items-center justify-center p-4 bg-[#050505] border border-white/[0.04] rounded-sm group overflow-hidden">
+              {/* Main Image Stage with cross-fade animation */}
+              <div className="relative aspect-[4/3] flex items-center justify-center p-4 bg-[#080808] border border-white/[0.04] rounded-sm group overflow-hidden">
                 <img
-                  src={currentImage}
-                  alt={`${watch.name} - ${activeView} view`}
-                  className="max-h-full max-w-full object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.95)] transition-all duration-500 group-hover:scale-105"
+                  src={currentImage.url}
+                  alt={`${watch.name} - ${currentImage.label}`}
+                  className={`max-h-full max-w-full object-contain filter drop-shadow-[0_25px_40px_rgba(0,0,0,0.95)] transition-all duration-300 ${
+                    isTransitioning
+                      ? 'opacity-0 scale-95 blur-sm'
+                      : 'opacity-100 scale-100 blur-0 group-hover:scale-105'
+                  }`}
                 />
                 <div className="light-sweep pointer-events-none" aria-hidden="true" />
+                
+                <span className="absolute bottom-3 left-4 font-mono text-[8px] tracking-widest text-luxury-stone/50 uppercase">
+                  PERSPECTIVE: {currentImage.label}
+                </span>
               </div>
 
-              {/* Gallery View Thumbnails / Angle Selectors */}
-              <div className="grid grid-cols-5 gap-2 mt-4">
-                {(['front', 'side', 'back', 'movement', 'detail'] as const).map((angle) => {
-                  const img = watch.galleryImages[angle] || watch.heroImage;
-                  const isSelected = activeView === angle;
+              {/* Thumbnail Selector Bar */}
+              <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2">
+                {allImages.map((img, idx) => {
+                  const isSelected = activeImageIndex === idx;
                   return (
                     <button
-                      key={angle}
-                      onClick={() => setActiveView(angle)}
-                      className={`relative aspect-square border p-1 rounded-sm transition-all duration-300 flex items-center justify-center overflow-hidden ${
+                      key={`${img.url}-${idx}`}
+                      onClick={() => handleSelectThumbnail(idx)}
+                      className={`relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 border p-1 rounded-sm transition-all flex items-center justify-center overflow-hidden ${
                         isSelected
                           ? 'border-luxury-champagne bg-luxury-champagne/[0.08]'
                           : 'border-white/[0.08] hover:border-white/20 bg-black/40'
                       }`}
                       data-cursor="VIEW"
                     >
-                      <img src={img} alt={angle} className="max-h-full max-w-full object-contain" />
-                      <span className="absolute bottom-1 right-1 font-mono text-[7px] tracking-wider text-luxury-stone/80 uppercase bg-black/80 px-1">
-                        {angle}
+                      <img src={img.url} alt={img.label} className="max-h-full max-w-full object-contain" />
+                      <span className="absolute bottom-0.5 right-1 font-mono text-[6px] tracking-wider text-luxury-stone uppercase bg-black/80 px-1">
+                        {img.label}
                       </span>
                     </button>
                   );
@@ -131,8 +198,8 @@ export const WatchDetailModal: React.FC<WatchDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Right: Detailed Dossier & Acquisition Action */}
-          <div className="lg:col-span-5 p-6 sm:p-10 flex flex-col justify-between bg-[#0A0A0A] space-y-8">
+          {/* Right Column: Catalogue Specifications & Acquisition */}
+          <div className="lg:col-span-5 p-6 sm:p-10 flex flex-col justify-between bg-[#080808] space-y-8">
             <div>
               <div className="border-b border-white/[0.08] pb-6">
                 <span className="font-mono text-[10px] tracking-[0.3em] text-luxury-champagne uppercase block">
@@ -147,10 +214,10 @@ export const WatchDetailModal: React.FC<WatchDetailModalProps> = ({
 
                 <div className="mt-4 flex items-baseline gap-4">
                   <span className="font-mono text-xl sm:text-2xl text-luxury-champagne font-light">
-                    {watch.priceFormatted}
+                    {watch.formattedPrice}
                   </span>
                   <span className="font-mono text-xs text-luxury-stone/60">
-                    {watch.priceCHF}
+                    {watch.formattedPriceCHF}
                   </span>
                 </div>
               </div>
@@ -171,9 +238,16 @@ export const WatchDetailModal: React.FC<WatchDetailModalProps> = ({
                 </h4>
                 <dl className="space-y-3 font-mono text-[10px]">
                   {specsList.map((spec) => (
-                    <div key={spec.label} className="flex items-start justify-between gap-4 border-b border-white/[0.04] pb-2">
-                      <dt className="text-luxury-stone/60 tracking-wider flex-shrink-0">{spec.label}</dt>
-                      <dd className="text-luxury-ivory text-right font-sans font-light text-xs truncate">{spec.value}</dd>
+                    <div
+                      key={spec.label}
+                      className="flex items-start justify-between gap-4 border-b border-white/[0.04] pb-2"
+                    >
+                      <dt className="text-luxury-stone/60 tracking-wider flex-shrink-0">
+                        {spec.label}
+                      </dt>
+                      <dd className="text-luxury-ivory text-right font-sans font-light text-xs truncate">
+                        {spec.value}
+                      </dd>
                     </div>
                   ))}
                 </dl>
@@ -187,10 +261,21 @@ export const WatchDetailModal: React.FC<WatchDetailModalProps> = ({
                   onClose();
                   onAcquire(watch);
                 }}
-                className="w-full py-3.5 bg-luxury-champagne text-black font-mono text-[11px] tracking-[0.25em] hover:bg-white transition-all flex items-center justify-center gap-2 group font-medium"
+                disabled={watch.availability === 'SOLD OUT'}
+                className={`w-full py-3.5 font-mono text-[11px] tracking-[0.25em] transition-all flex items-center justify-center gap-2 group font-medium ${
+                  watch.availability === 'SOLD OUT'
+                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                    : 'bg-luxury-champagne text-black hover:bg-white'
+                }`}
                 data-cursor="INQUIRE"
               >
-                <span>REQUEST BESPOKE ALLOCATION</span>
+                <span>
+                  {watch.availability === 'SOLD OUT'
+                    ? 'PIECE ALLOCATED / SOLD OUT'
+                    : watch.availability === 'COMING SOON'
+                    ? 'JOIN ALLOCATION WAITLIST'
+                    : 'REQUEST INFORMATION & ALLOCATION'}
+                </span>
                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </button>
 

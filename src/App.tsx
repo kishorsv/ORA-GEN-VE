@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { useWatchStore } from './hooks/useWatchStore';
+import { useWatches } from './hooks/useWatches';
+import { useSiteSettings } from './hooks/useSiteSettings';
+import { useFavorites } from './hooks/useFavorites';
 import { useLenis } from './hooks/useLenis';
-import { CustomCursor } from './components/CustomCursor';
-import { GrainOverlay } from './components/GrainOverlay';
+import type { WatchModel } from './types/database';
+
+import { AnnouncementBar } from './components/AnnouncementBar';
 import { Navbar } from './components/Navbar';
 import { MobileMenu } from './components/MobileMenu';
 import { HeroSection } from './components/HeroSection';
@@ -11,135 +14,225 @@ import { CollectionSection } from './components/CollectionSection';
 import { CalibreMovementSection } from './components/CalibreMovementSection';
 import { CraftsmanshipSection } from './components/CraftsmanshipSection';
 import { WatchDetailModal } from './components/WatchDetailModal';
-import { AcquisitionModal } from './components/AcquisitionModal';
-import { WatchManagementModal } from './components/WatchManagementModal';
+import { InquiryModal } from './components/InquiryModal';
+import { AdminPortalModal } from './components/AdminPortalModal';
+import { LiveSearchModal } from './components/LiveSearchModal';
+import { FavoritesModal } from './components/FavoritesModal';
+import { AuthModal } from './components/AuthModal';
+import { CustomCursor } from './components/CustomCursor';
+import { GrainOverlay } from './components/GrainOverlay';
+import { LoadingScreen } from './components/LoadingScreen';
+import { ApiErrorState } from './components/ApiErrorState';
 import { Footer } from './components/Footer';
 
 export const App: React.FC = () => {
-  // Initialize Lenis smooth scroll
+  // 1. Initialize Lenis smooth scroll
   useLenis();
 
-  // Watch state store
+  // 2. Data hooks
   const {
     watches,
-    activeWatch,
-    activeWatchId,
-    setActiveWatchId,
-    selectedWatchForDetail,
-    isDetailOpen,
-    openDetail,
-    closeDetail,
-    isAcquisitionOpen,
-    openAcquisition,
-    closeAcquisition,
-    isManagementOpen,
-    openManagement,
-    closeManagement,
-    addCustomWatch,
-    resetToFactoryWatches,
-  } = useWatchStore();
+    loading: watchesLoading,
+    error: watchesError,
+    filters,
+    setFilters,
+    refetch: refetchWatches,
+  } = useWatches();
 
+  const {
+    settings,
+    updateSettings,
+    refetch: refetchSettings,
+  } = useSiteSettings();
+
+  const {
+    favoriteIds,
+    favoritesCount,
+    toggleFavorite,
+    isFavorite,
+  } = useFavorites();
+
+  // 3. UI State
+  const [activeWatchId, setActiveWatchId] = useState<string>('w-ora-01');
+  const [selectedWatchForDetail, setSelectedWatchForDetail] = useState<WatchModel | null>(null);
+
+  // Modal open states
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isInquiryOpen, setIsInquiryOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Derive active hero watch
+  const activeWatch =
+    watches.find((w) => w.id === activeWatchId) ||
+    watches.find((w) => w.id === settings.featured_watch_id) ||
+    watches[0] ||
+    null;
+
+  // Derive favorite watches list
+  const favoriteWatches = watches.filter((w) => favoriteIds.includes(w.id));
+
+  // Navigation helper
   const handleNavigate = (sectionId: string) => {
     const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSelectActiveWatch = (id: string) => {
-    setActiveWatchId(id);
+  const handleOpenDetail = (watch: WatchModel) => {
+    setSelectedWatchForDetail(watch);
+    setIsDetailOpen(true);
   };
+
+  const handleOpenInquiry = (watch?: WatchModel) => {
+    if (watch) setSelectedWatchForDetail(watch);
+    setIsInquiryOpen(true);
+  };
+
+  // Initial loading state
+  if (watchesLoading && watches.length === 0) {
+    return <LoadingScreen />;
+  }
 
   return (
-    <div className="relative min-h-screen bg-[#050505] text-[#F5F2EA] overflow-x-hidden selection:bg-luxury-champagne/20">
-      {/* Custom Luxury Cursor for Desktop */}
+    <div className="relative min-h-screen bg-[#030303] text-[#F4F1EA] overflow-x-hidden selection:bg-luxury-champagne/20">
+      {/* Luxury Custom Cursor (Desktop) */}
       <CustomCursor />
 
-      {/* Atmospheric Film Grain and Vignette */}
+      {/* Atmospheric Film Grain & Studio Vignette */}
       <GrainOverlay />
 
-      {/* Navigation Bar */}
-      <Navbar
-        onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-        onOpenManagement={openManagement}
-        onOpenAcquisition={() => openAcquisition(activeWatch)}
-        activeModelName={activeWatch.name}
+      {/* 1. Dynamic Announcement Bar */}
+      <AnnouncementBar
+        active={settings.announcement_active}
+        text={settings.announcement_text}
+        onAction={() => handleOpenInquiry(activeWatch || undefined)}
       />
 
-      {/* Fullscreen Mobile Menu */}
+      {/* 2. Primary Navigation Bar */}
+      <Navbar
+        onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+        onOpenManagement={() => setIsAdminOpen(true)}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenFavorites={() => setIsFavoritesOpen(true)}
+        onOpenAcquisition={() => handleOpenInquiry(activeWatch || undefined)}
+        activeWatch={activeWatch}
+        favoritesCount={favoritesCount}
+      />
+
+      {/* 3. Fullscreen Mobile Menu */}
       <MobileMenu
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
         onNavigate={handleNavigate}
-        onOpenManagement={openManagement}
-        onOpenAcquisition={() => openAcquisition(activeWatch)}
+        onOpenManagement={() => setIsAdminOpen(true)}
+        onOpenAcquisition={() => handleOpenInquiry(activeWatch || undefined)}
       />
 
-      {/* Main Experience Flow */}
-      <main className="relative z-10 w-full overflow-x-hidden">
-        {/* 1. Cinematic Hero Section */}
-        <HeroSection
-          watch={activeWatch}
-          onExplore={() => openDetail(activeWatch)}
-          onDiscoverMovement={() => handleNavigate('calibre')}
-        />
+      {/* Error Boundary / Fallback View if database query fails */}
+      {watchesError && watches.length === 0 ? (
+        <div className="pt-32">
+          <ApiErrorState message={watchesError} onRetry={refetchWatches} />
+        </div>
+      ) : (
+        /* Main Experience Storytelling Sections */
+        <main className="relative z-10 w-full overflow-x-hidden">
+          {/* Hero Section */}
+          <HeroSection
+            watch={activeWatch}
+            siteSettings={settings}
+            onExplore={() => activeWatch && handleOpenDetail(activeWatch)}
+            onDiscoverMovement={() => handleNavigate('calibre')}
+          />
 
-        {/* 2. Scroll-Driven Watch Anatomy (Center -> Right -> Center -> Left -> Fullscreen) */}
-        <CinematicStorySection
-          watch={activeWatch}
-          onExploreWatch={() => openDetail(activeWatch)}
-        />
+          {/* Continuous Scroll Anatomy Section */}
+          <CinematicStorySection
+            watch={activeWatch}
+            onExploreWatch={() => activeWatch && handleOpenDetail(activeWatch)}
+          />
 
-        {/* 3. The Collection (Asymmetrical editorial layouts) */}
-        <CollectionSection
-          watches={watches}
-          activeWatchId={activeWatchId}
-          onSelectWatch={(watch) => setActiveWatchId(watch.id)}
-          onOpenDetail={openDetail}
-        />
+          {/* The Collection Section (Editorial Layouts + Database Filters) */}
+          <CollectionSection
+            watches={watches}
+            activeWatchId={activeWatch?.id || ''}
+            onSelectWatch={(watch) => setActiveWatchId(watch.id)}
+            onOpenDetail={handleOpenDetail}
+            filters={filters}
+            onFilterChange={setFilters}
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+          />
 
-        {/* 4. Calibre 900 Mechanical Movement & Metrology */}
-        <CalibreMovementSection
-          watch={activeWatch}
-        />
+          {/* Calibre 900 Mechanical Movement & Metrology Hotspots */}
+          <CalibreMovementSection watch={activeWatch} />
 
-        {/* 5. The Art of Craft (Métiers d'Art & Atelier) */}
-        <CraftsmanshipSection />
-      </main>
+          {/* Métiers d'Art & Geneva Atelier Craftsmanship */}
+          <CraftsmanshipSection />
+        </main>
+      )}
 
       {/* Footer */}
       <Footer
-        onOpenAcquisition={() => openAcquisition(activeWatch)}
-        onOpenManagement={openManagement}
+        onOpenAcquisition={() => handleOpenInquiry(activeWatch || undefined)}
+        onOpenManagement={() => setIsAdminOpen(true)}
+        siteSettings={settings}
       />
 
-      {/* Modals & Drawers */}
-      {/* 1. Watch Detail Modal */}
+      {/* --- ALL REAL-TIME MODALS & DIALOGS --- */}
+
+      {/* Watch Detail Catalogue Modal */}
       <WatchDetailModal
-        watch={selectedWatchForDetail}
+        watch={selectedWatchForDetail || activeWatch}
         isOpen={isDetailOpen}
-        onClose={closeDetail}
-        onAcquire={(watch) => openAcquisition(watch)}
+        onClose={() => setIsDetailOpen(false)}
+        onAcquire={(watch) => handleOpenInquiry(watch)}
+        isFavorite={selectedWatchForDetail ? isFavorite(selectedWatchForDetail.id) : false}
+        onToggleFavorite={toggleFavorite}
       />
 
-      {/* 2. Acquisition Concierge Modal */}
-      <AcquisitionModal
-        watch={selectedWatchForDetail}
-        isOpen={isAcquisitionOpen}
-        onClose={closeAcquisition}
+      {/* Real-Time Client Inquiry Modal */}
+      <InquiryModal
+        watch={selectedWatchForDetail || activeWatch}
+        isOpen={isInquiryOpen}
+        onClose={() => setIsInquiryOpen(false)}
       />
 
-      {/* 3. Atelier Vault & Watch Photography Manager */}
-      <WatchManagementModal
+      {/* Live Admin Database & Inventory Portal */}
+      <AdminPortalModal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
         watches={watches}
-        activeWatchId={activeWatchId}
-        isOpen={isManagementOpen}
-        onClose={closeManagement}
-        onSelectActiveWatch={handleSelectActiveWatch}
-        onAddWatch={addCustomWatch}
-        onResetFactory={resetToFactoryWatches}
+        siteSettings={settings}
+        onUpdateSiteSettings={updateSettings}
+        onWatchUpdated={() => {
+          refetchWatches();
+          refetchSettings();
+        }}
+      />
+
+      {/* Debounced Live Search Modal */}
+      <LiveSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onSelectWatch={(watch) => handleOpenDetail(watch)}
+      />
+
+      {/* Curated Favorites Modal */}
+      <FavoritesModal
+        isOpen={isFavoritesOpen}
+        onClose={() => setIsFavoritesOpen(false)}
+        favoriteWatches={favoriteWatches}
+        onSelectWatch={handleOpenDetail}
+        onRemoveFavorite={toggleFavorite}
+      />
+
+      {/* Supabase Client Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
       />
     </div>
   );
